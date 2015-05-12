@@ -1,0 +1,68 @@
+{
+    "id": "ibm.devops.services.pipeline.devops.control",
+    "version": 1,
+    "name_key": "ExtName",
+    "desc_key": "ExtDesc",
+    "extension_type": "Build",
+    "message_key": "ExtMessage",
+    "inputs": [
+        {
+            "type": "Bluemix",
+            "inclusion" : "always"
+        }
+    ],
+    "params": [
+        {
+            "name": "TARGET_PLATFORM",
+            "type": "Text",
+            "required": "true",
+            "default_value": "Containers",
+            "label_key": "TARGET_PLATFORM_KEY",
+            "desc_key": "TARGET_PLATFORM_DESC"
+        },   
+        {
+            "name": "RAMPUP_TIME",
+            "type": "Text",
+            "required": "true",
+            "default_value": "10",
+            "label_key": "RAMPUP_TIME_KEY",
+            "desc_key": "RAMPUP_TIME_DESC"
+        },   
+        {
+            "name": "STANDBY_TIME",
+            "type": "Text",
+            "required": "true",
+            "default_value": "50",
+            "label_key": "STANDBY_TIME_KEY",
+            "desc_key": "STANDBY_TIME_DESC"
+        }, 
+        {
+            "name": "RAMPDOWN_TIME",
+            "type": "Text",
+            "required": "true",
+            "default_value": "10",
+            "label_key": "RAMPDOWN_TIME_KEY",
+            "desc_key": "RAMPDOWN_TIME_DESC"
+        }
+    ],
+    "outputs": [
+        {
+            "type": "Artifacts",
+            "inclusion" : "always"
+        }
+    ],
+    "execution": {
+        "type": "JenkinsDocker",
+        "shell": "#!/bin/bash
+export INIT_START_TIME=$(date +\"%s\")
+export RAMPDOWN_TIME=#RAMPDOWN_TIME#
+export RAMPUP_TIME=#RAMPUP_TIME#
+export TARGET_PLATFORM=#TARGET_PLATFORM#
+set +x
+set +e"
+    }
+    },
+    "project": "https://hub.jazz.net/project/alchemy/Alchemy-Ostanes",
+    "project_example": "https://hub.jazz.net/pipeline/rjminsha/ice-pipeline_demo",
+    "project_contact": "rjminsha@us.ibm.com"
+}
