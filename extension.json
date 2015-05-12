@@ -31,7 +31,7 @@
         {
             "name": "STANDBY_TIME",
             "type": "Text",
-            "required": "true",
+            "required": "false",
             "default_value": "50",
             "label_key": "STANDBY_TIME_KEY",
             "desc_key": "STANDBY_TIME_DESC"
@@ -39,7 +39,7 @@
         {
             "name": "RAMPDOWN_TIME",
             "type": "Text",
-            "required": "true",
+            "required": "false",
             "default_value": "10",
             "label_key": "RAMPDOWN_TIME_KEY",
             "desc_key": "RAMPDOWN_TIME_DESC"
