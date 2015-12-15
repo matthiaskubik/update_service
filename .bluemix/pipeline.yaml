@@ -50,10 +50,10 @@ stages:
   - name: Deploy Successor
     type: deployer
     target:
-      region_id: ibm:yp:us-south
-      organization: eergun_org
-      space: dev
-      application: ad_step
+      url: ${CF_TARGET_URL}
+      organization: ${CF_ORGANIZATION}
+      space: ${CF_SPACE}
+      application: ${CF_APP}
     script: |-
       #!/bin/bash
 
@@ -67,10 +67,10 @@ stages:
   - name: Begin AD, Rampup
     type: deployer
     target:
-      region_id: ibm:yp:us-south
-      organization: eergun_org
-      space: dev
-      application: ad_step
+      url: ${CF_TARGET_URL}
+      organization: ${CF_ORGANIZATION}
+      space: ${CF_SPACE}
+      application: ${CF_APP}
     script: |-
       #!/bin/bash
 
@@ -122,8 +122,8 @@ stages:
           fi
       }
 
-      git_retry clone https://github.com/Osthanes/update_service.git update_service
-      /bin/bash update_service/activedeploy_step_1.sh
+      git_retry clone https://github.com/kalantar/deployscripts_step.git deployscripts_step
+      /bin/bash deployscripts_step/activedeploy_step_1.sh
       #source ${EXT_DIR}/deployscripts_step/temp1.sh
   - name: Test
     type: tester
@@ -133,10 +133,10 @@ stages:
   - name: Finish AD
     type: deployer
     target:
-      region_id: ibm:yp:us-south
-      organization: eergun_org
-      space: dev
-      application: ad_step
+      url: ${CF_TARGET_URL}
+      organization: ${CF_ORGANIZATION}
+      space: ${CF_SPACE}
+      application: ${CF_APP}
     script: |-
       #!/bin/bash
 
@@ -188,5 +188,5 @@ stages:
           fi
       }
 
-      git_retry clone https://github.com/Osthanes/update_service.git update_service
-      /bin/bash update_service/activedeploy_step_2.sh
+      git_retry clone https://github.com/kalantar/deployscripts_step.git deployscripts_step
+      /bin/bash deployscripts_step/activedeploy_step_2.sh
