@@ -4,7 +4,7 @@
 
 ## Active Deploy Sample Scripts
 
-Scripts that can be used to do a zero-downtime upgrade of a 
+Sample scripts that can be used to do a zero-downtime upgrade of a 
 CloudFoundary Application using Active Deploy on IBM Bluemix. 
 
 [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/Osthanes/update_service.git)
