@@ -16,7 +16,7 @@
             "name": "TARGET_PLATFORM",
             "type": "Text",
             "required": "true",
-            "default_value": "Containers",
+            "default_value": "Cloud Foundry",
             "label_key": "TARGET_PLATFORM_KEY",
             "desc_key": "TARGET_PLATFORM_DESC"
         },   
@@ -24,23 +24,15 @@
             "name": "RAMPUP_TIME",
             "type": "Text",
             "required": "true",
-            "default_value": "10",
+            "default_value": "600",
             "label_key": "RAMPUP_TIME_KEY",
             "desc_key": "RAMPUP_TIME_DESC"
-        },   
-        {
-            "name": "STANDBY_TIME",
-            "type": "Text",
-            "required": "false",
-            "default_value": "50",
-            "label_key": "STANDBY_TIME_KEY",
-            "desc_key": "STANDBY_TIME_DESC"
-        }, 
+        },    
         {
             "name": "RAMPDOWN_TIME",
             "type": "Text",
-            "required": "false",
-            "default_value": "10",
+            "required": "true",
+            "default_value": "600",
             "label_key": "RAMPDOWN_TIME_KEY",
             "desc_key": "RAMPDOWN_TIME_DESC"
         }
