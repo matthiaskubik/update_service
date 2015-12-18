@@ -1,0 +1,12 @@
+*.pyc
+*.pyo
+.project
+.pydevproject
+*~
+.*~
+build
+dist
+*.egg-info
+bdd/reports/*
+id_active_deploy*
+provenance.txt
