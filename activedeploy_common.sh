@@ -172,3 +172,87 @@ function wait_for_update (){
     return 3
 }
 
+
+# Remove white space from the start of string
+# Usage: trim_start string
+function trim_start() {
+  if read -t 0 str; then
+    sed -e 's/^[[:space:]]*//'
+  else
+    echo -e "$*" | sed -e 's/^[[:space:]]*//'
+  fi
+}
+
+
+# Remove whitespace from the end of a string
+# Usage: trim_end string
+function trim_end () {
+  if read -t 0 str; then
+    sed -e 's/[[:space:]]*$//'
+  else
+    echo -e "$*" | sed -e 's/[[:space:]]*$//'
+  fi
+}
+
+
+# Remove whitespace from the start and end of a string
+# Usage trim string
+function trim () {
+  if read -t 0 str; then
+    sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+  else
+    echo -e "$*" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+  fi
+}
+
+
+# Get property value from array of strings of the form "key: value"
+# Usage: get_property key array_of_properties
+function get_property() {
+  __key=$1; shift
+  __properties=("$@")
+  for e in "${__properties[@]}"; do
+    if [[ $e =~ ${__key}:[[:space:]].* ]]; then
+      trim $(echo $e | cut -d: -f2)
+    fi
+  done
+}
+
+
+# TODO - implement retry logic
+
+function advance() {
+  __update_id="${1}"
+  echo "Advancing update ${__update_id}"
+  cf active-deploy-show ${__update_id}
+
+  cf active-deploy-advance ${__update_id}
+  wait_for_update ${__update_id} rampdown 600 && rc=$? || rc=$?
+  
+  echo "Return code for advance is ${rc}
+  return ${rc}
+}
+
+
+function rollback() {
+  __update_id="${1}"
+  
+  echo "Rolling back update ${__update_id}"
+  cf active-deploy-show ${__update_id}
+
+  cf active-deploy-rollback ${__update_id}
+  wait_for_update ${__update_id} initial 600 && rc=$? || rc=$?
+  
+  echo "Return code for rollback is ${rc}
+  return ${rc}
+}
+
+
+function delete() {
+  __update_id="${1}"
+  
+  echo "Deleting update ${__update_id}"
+  cf active-deploy-show ${__update_id}
+
+  cf active-deploy-delete ${__update_id} --force
+}
