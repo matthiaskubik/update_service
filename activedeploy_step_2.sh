@@ -29,10 +29,11 @@ in_prog=$(cf active-deploy-list | grep "${CF_APP}_${UPDATE_ID}")
 read -a array <<< "$in_prog"
 CREATE=${array[0]}
 echo "========> id in progress: ${CREATE}"
+cf active-deploy-show ${CREATE}
 
 IFS=$'\n' properties=($(cf active-deploy-show ${CREATE} | grep ':'))
 update_status=$(get_property 'status' ${properties[@]})
-if [[ "${update_status}" != 'in progress' ]]; then
+if [[ "${update_status}" != 'in_progress' ]]; then
   echo "Deployment in unexpected status: ${update_status}"
   rollback ${CREATE}
   delete ${CREATE}
@@ -40,20 +41,20 @@ if [[ "${update_status}" != 'in progress' ]]; then
 fi
 
 
+
 if [ "$USER_TEST" = true ]; then
   "Test success -- completing update ${CREATE}"
   advance ${CREATE}  && rc=$? || rc=$?
-  cf active-deploy-list
   # If failure doing advance, then rollback
   if (( $rc )); then
-    rollback ${CREATE}
-    delete ${CREATE}
-    exit 1
+    echo "Advance to rampdown failed; rolling back update ${CREATE}"
+    rollback ${CREATE} || true 
   fi
 else
   echo "Test failure -- rolling back update ${CREATE}"
-  rollback ${CREATE}
+  rollback ${CREATE} && rc=$? || rc=$?
 fi
 
-# Cleanup -- delete update record
+# Cleanup - delete update record
 delete ${CREATE}
+exit $rc
