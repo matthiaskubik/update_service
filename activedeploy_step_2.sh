@@ -9,14 +9,14 @@ env
 find . -print
 
 # Pull in common methods
-source ${SCRIPTDIR}/activedeploy_common.sh
+source "${SCRIPTDIR}/activedeploy_common.sh"
 
 # Identify BACKEND (APPS or CONTAINERS) and pull in specific implementations
 if [[ -z ${BACKEND} ]]; then
   echo "ERROR: Backend not specified"
   exit 1
 fi
-source ${SCRIPTDIR}/${BACKEND}
+source "${SCRIPTDIR}/${BACKEND}.sh"
 
 ###################################################################################
 function clean() {
