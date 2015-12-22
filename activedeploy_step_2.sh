@@ -29,7 +29,7 @@ function clean() {
   local NAME_ARRAY=$(groupList)
 
   for name in ${NAME_ARRAY[@]}; do
-    version=$(echo ${name} | sed 's#.*_##g')
+    version=$(echo "${name}" | sed 's#.*_##g')
     echo "Considering ${name} with version ${version}"
     if (( ${version} > ${BUILD_NUMBER} )); then
       echo "${name} has a version (${version}) greater than the current version (${BUILD_NUMBER})."
@@ -38,7 +38,7 @@ function clean() {
       echo "${name} will not be deleted"
     else # delete it
       echo "Removing ${name}"
-      groupDelete ${name}
+      # groupDelete "${name}"
     fi
   done
 }
