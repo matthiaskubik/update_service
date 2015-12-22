@@ -25,7 +25,6 @@ function clean() {
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
     TO_KEEP[${i}]="${CF_APP}_$((${BUILD_NUMBER}-${i}))"
   done
-  echo "TO_KEEP = ${TO_KEEP[@]}"
 
   local NAME_ARRAY=$(groupList)
 
