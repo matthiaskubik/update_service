@@ -25,13 +25,8 @@ function clean() {
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
     TO_KEEP[${i}]="${CF_APP}_$((${BUILD_NUMBER}-${i}))"
   done
-  echo "${TO_KEEP[@]}"
 
-  cf apps
-  cf apps | awk -v pattern="${CF_APP}_[0-9]\*" '$1 ~ pattern {print $1}'
-  
   local NAME_ARRAY=$(groupList)
-  echo "${NAME_ARRAY[@]}"
 
   for name in ${NAME_ARRAY[@]}; do
     version=$(echo ${name} | sed 's#.*_##g')
@@ -43,7 +38,7 @@ function clean() {
       echo "${name} will not be deleted"
     else # delete it
       echo "Removing ${name}"
-      # groupDelete ${name}
+      groupDelete ${name}
     fi
   done
 }
@@ -104,6 +99,7 @@ if (( $clean_rc )); then
 fi
 
 # Cleanup - delete update record
+echo "Deleting upate record"
 delete ${CREATE} && delete_rc=$? || delete_rc=$?
 if (( $delete_rc )); then
   echo "WARN: Unable to delete update record ${CREATE}
