@@ -25,8 +25,13 @@ function clean() {
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
     TO_KEEP[${i}]="${CF_APP}_$((${BUILD_NUMBER}-${i}))"
   done
+  echo $TO_KEEP
 
+  cf apps
+  cf apps | awk -v pattern="${CF_APP}_[0-9]\*" '$1 ~ pattern {print $1}'
+  
   local NAME_ARRAY=$(groupList)
+  echo $NAME_ARRAY
 
   for name in ${NAME_ARRAY[@]}; do
     version=$(echo ${name} | sed 's#.*_##g')
