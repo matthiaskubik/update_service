@@ -95,14 +95,14 @@ fi
 # Cleanup - delete older updates
 clean && clean_rc=$? || clean_rc=$?
 if (( $clean_rc )); then
-  echo "WARN: Unable to delete old versions. 
+  echo "WARN: Unable to delete old versions."
 fi
 
 # Cleanup - delete update record
 echo "Deleting upate record"
 delete ${CREATE} && delete_rc=$? || delete_rc=$?
 if (( $delete_rc )); then
-  echo "WARN: Unable to delete update record ${CREATE}
+  echo "WARN: Unable to delete update record ${CREATE}"
 fi
 
 exit $rc

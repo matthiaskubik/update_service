@@ -7,7 +7,7 @@ function groupList() {
 }
 
 function groupDelete() {
-  cf delete ${1} --force
+  cf delete ${1} -f
   ## TODO error checking on result of cf delete call
 }
 
