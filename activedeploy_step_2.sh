@@ -23,7 +23,7 @@ function clean() {
 
   # Identify list of build numbers to keep
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    TO_KEEP[${i}]="${CONTAINER_NAME}_$((${BUILD_NUMBER}-${i}))"
+    TO_KEEP[${i}]="${CF_APP}_$((${BUILD_NUMBER}-${i}))"
   done
   echo "TO_KEEP = ${TO_KEEP[@]}"
 
