@@ -26,7 +26,7 @@ function clean() {
     TO_KEEP[${i}]="${CF_APP}_$((${BUILD_NUMBER}-${i}))"
   done
 
-  local NAME_ARRAY=$(groupList)
+  read -a NAME_ARRAY <<< $(groupList)
 
   for name in ${NAME_ARRAY[@]}; do
     version=$(echo "${name}" | sed 's#.*_##g')
