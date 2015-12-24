@@ -38,7 +38,9 @@ function get_originals(){
 # Validate needed inputs or set defaults
 
 # Setup pipeline slave
+cf apps
 slave_setup
+cf apps
 
 #MK##EE# TODO: pass in originals variable
 #MK#get_originals ${CF_APP}
@@ -47,7 +49,8 @@ originals=($(groupList))
 successor="${CF_APP}_${BUILD_NUMBER}"
 
 # Deploy the new version
-deployGroup "${successor}"
+cf push "${CF_APP}_${BUILD_NUMBER}" --no-route -i 1
+# deployGroup "${successor}"
 if (( ${#originals[@]} )); then
   echo "Not initial version"
 else
