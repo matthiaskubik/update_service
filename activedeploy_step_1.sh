@@ -51,6 +51,8 @@ deployGroup "${successor}"
 if (( ${#originals[@]} )); then
   echo "Not initial version"
 else
+  echo "Initial version,scaling"
+  scaleGroup ${successor} 4
   echo "Initial version, mapping route"
   mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
 fi
