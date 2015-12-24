@@ -8,6 +8,15 @@ find . -print
 # Pull in common methods
 source ${SCRIPTDIR}/activedeploy_common.sh
 
+# Identify BACKEND (APPS or CONTAINERS) and pull in specific implementations
+if [[ -z ${BACKEND} ]]; then
+  echo "ERROR: Backend not specified"
+  exit 1
+fi
+source "${SCRIPTDIR}/${BACKEND}.sh"
+
+###################################################################################
+
 function get_originals(){
   local __prefix=$(echo ${1} | cut -c 1-16)
   #EE# local __originals=${2}
@@ -25,19 +34,30 @@ function get_originals(){
 }
 
 ###################################################################################
-###################################################################################
 
-if [[ -z ${BACKEND} ]]; then
-  echo "ERROR: Backend not specified"
-  exit 1
-  #return 6
-fi
+# Validate needed inputs or set defaults
 
 # Setup pipeline slave
 slave_setup
 
-#EE# TODO: pass in originals variable
-get_originals ${CF_APP}
+#MK##EE# TODO: pass in originals variable
+#MK#get_originals ${CF_APP}
+originals=($(groupList))
+
+successor="${CF_APP}_${BUILD_NUMBER}"
+
+# Deploy the new version
+deployGroup "${successor}"
+cf push "${CF_APP}_${BUILD_NUMBER}" --no-route -i 1
+if (( ${#originals[@]} )); then
+  echo "Not initial version"
+else
+  echo "Initial version, mapping route"
+  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
+fi
+
+# export version of this build
+export UPDATE_ID=${BUILD_NUMBER}
 
 # Determine which original groups has the desired route --> the current original
 export route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
