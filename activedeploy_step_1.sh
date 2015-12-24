@@ -48,7 +48,6 @@ successor="${CF_APP}_${BUILD_NUMBER}"
 
 # Deploy the new version
 deployGroup "${successor}"
-cf push "${CF_APP}_${BUILD_NUMBER}" --no-route -i 1
 if (( ${#originals[@]} )); then
   echo "Not initial version"
 else
