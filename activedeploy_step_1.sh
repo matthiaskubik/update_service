@@ -49,7 +49,6 @@ originals=($(groupList))
 successor="${CF_APP}_${BUILD_NUMBER}"
 
 # Deploy the new version
-cf push "${CF_APP}_${BUILD_NUMBER}" --no-route -i 1
 # deployGroup "${successor}"
 if (( ${#originals[@]} )); then
   echo "Not initial version"
