@@ -127,20 +127,15 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Initiated update: ${update}"
   cf active-deploy-show $update --timeout 60s
-
-  CREATE=$update
-  #export CREATE
-  touch ${SCRIPTDIR}/temp1.sh
-  pwd  
-  echo "export CREATE=${update}" >> ${SCRIPTDIR}/temp1.sh
   
   # Wait for completion
-  wait_for_update $update rampdown 600 && rc=$? || rc=$?
-  echo "wait result is $rc"
+  #EE# wait_for_update $update rampdown 600 && rc=$? || rc=$?
+  #EE# echo "wait result is $rc"
   
   cf active-deploy-advance $update
   
   wait_for_update $update test 600 && rc=$? || rc=$?
+  echo "wait result is $rc"
   
   cf active-deploy-list
   
@@ -152,5 +147,4 @@ if [[ -n "${original_grp}" ]]; then
     exit 1
   fi
   
-  echo $CREATE
 fi
