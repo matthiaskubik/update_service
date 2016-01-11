@@ -17,20 +17,52 @@ source "${SCRIPTDIR}/${BACKEND}.sh"
 
 ###################################################################################
 
-function get_originals(){
-  local __prefix=$(echo ${1} | cut -c 1-16)
-  #EE# local __originals=${2}
+#EE# function get_originals(){
+  #EE# local __prefix=$(echo ${1} | cut -c 1-16)
+  #EE# #EE# local __originals=${2}
 
-  if [[ "CCS" == "${BACKEND}" ]]; then
-    read -a originals <<< $(ice group list | grep -v 'Group Id' | grep " ${__prefix}" | awk '{print $1}')
-  elif [[ "APPS" == "${BACKEND}" ]]; then
-    read -a originals <<< $(cf apps | grep -v "^Getting" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep -v "^name" | grep "${__prefix}" | awk '{print $1}')
-  else
-    >&2 echo "ERROR: Unknown backend ${BACKEND}; expected one of \"CCS\" or \"APPS\""
-    return 3
-  fi
+  #EE# if [[ "CCS" == "${BACKEND}" ]]; then
+    #EE# read -a originals <<< $(ice group list | grep -v 'Group Id' | grep " ${__prefix}" | awk '{print $1}')
+  #EE# elif [[ "APPS" == "${BACKEND}" ]]; then
+    #EE# read -a originals <<< $(cf apps | grep -v "^Getting" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep -v "^name" | grep "${__prefix}" | awk '{print $1}')
+  #EE# else
+    #EE# >&2 echo "ERROR: Unknown backend ${BACKEND}; expected one of \"CCS\" or \"APPS\""
+    #EE# return 3
+  #EE# fi
   
-  echo ${#originals[@]} original groups found: ${originals[@]}
+  #EE# echo ${#originals[@]} original groups found: ${originals[@]}
+#EE# }
+
+#EE# acting funny, fix later
+function find_route(){
+  local __originals=()
+  read -a __originals <<< $(echo ${@})
+  echo ${#__originals[@]}
+  local __routed=()
+  
+  oldIFS=$IFS
+  IFS=': ,'
+  for i in "${__originals[@]}"
+  do   
+     echo "Checking routes for ${i}:"
+     read -a route_list <<< $(cf app ${i} | grep -v "^Showing" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep "^urls:")
+     #echo $'${route_list[@]:1}\n'
+   
+     if (( 1 < ${#route_list[@]} )); then
+       for j in "${route_list[@]}"
+	   do
+	      if [[ "${j}" == "${route}" ]]; then
+		    __routed+=("${i}")
+		    break
+		  fi
+	   done
+     fi  
+     unset route_list
+     echo ${__routed}
+  done
+  IFS=$oldIFS
+  
+  echo ${__routed}
 }
 
 ###################################################################################
@@ -113,7 +145,7 @@ if [[ -n "${original_grp}" ]]; then
   create_command="cf active-deploy-create ${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
   
   if [[ -n "${RAMPUP}" ]]; then create_command="${create_command} --rampup ${RAMPUP}s"; fi
-  if [[ -n "${TEST}" ]]; then create_command="${create_command} --test ${TEST}s"; fi
+  #EE# if [[ -n "${TEST}" ]]; then create_command="${create_command} --test ${TEST}s"; fi
   if [[ -n "${RAMPDOWN}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN}s"; fi
   
   echo "Executing update: ${create_command}"
@@ -132,19 +164,35 @@ if [[ -n "${original_grp}" ]]; then
   #EE# wait_for_update $update rampdown 600 && rc=$? || rc=$?
   #EE# echo "wait result is $rc"
   
+  wait_for_update $update test 600 && rc=$? || rc=$?
+  
   cf active-deploy-advance $update
   
-  wait_for_update $update test 600 && rc=$? || rc=$?
   echo "wait result is $rc"
   
   cf active-deploy-list
   
+  #EE# if (( $rc )); then
+    #EE# echo "ERROR: update failed"
+    #EE# echo cf-active-deploy-rollback $update
+    #EE# wait_for_update $update initial 600 && rc=$? || rc=$?
+    #EE# cf active-deploy-delete $update -f
+    #EE# exit 1
+  #EE# fi
+  
   if (( $rc )); then
-    echo "ERROR: update failed"
-    echo cf-active-deploy-rollback $update
-    wait_for_update $update initial 600 && rc=$? || rc=$?
-    cf active-deploy-delete $update -f
-    exit 1
+    echo "Advance to testing failed; rolling back update $update"
+    rollback $update || true
+    if (( $rollback_rc )); then
+      echo "WARN: Unable to rollback update"
+    fi 
+    
+    # Cleanup - delete update record
+    echo "Deleting update record"
+    delete $update && delete_rc=$? || delete_rc=$?
+    if (( $delete_rc )); then
+      echo "WARN: Unable to delete update record $update"
+    fi
   fi
   
 fi
