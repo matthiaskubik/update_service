@@ -1,5 +1,5 @@
 {
-    "id": "ibm.devops.services.pipeline.devops.control",
+    "id": "ibm.devops.services.pipeline.devops.activedeploy",
     "version": 1,
     "name_key": "ExtName",
     "desc_key": "ExtDesc",
@@ -28,14 +28,6 @@
             "label_key": "RAMPUP_TIME_KEY",
             "desc_key": "RAMPUP_TIME_DESC"
         },   
-        {
-            "name": "STANDBY_TIME",
-            "type": "Text",
-            "required": "false",
-            "default_value": "50",
-            "label_key": "STANDBY_TIME_KEY",
-            "desc_key": "STANDBY_TIME_DESC"
-        }, 
         {
             "name": "RAMPDOWN_TIME",
             "type": "Text",
