@@ -1,5 +1,5 @@
 {
-    "id": "ibm.devops.services.pipeline.devops.activedeploy",
+    "id": "ibm.devops.services.pipeline.devops.control",
     "version": 1,
     "name_key": "ExtName",
     "desc_key": "ExtDesc",
