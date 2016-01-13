@@ -17,22 +17,6 @@ source "${SCRIPTDIR}/${BACKEND}.sh"
 
 ###################################################################################
 
-#EE# function get_originals(){
-  #EE# local __prefix=$(echo ${1} | cut -c 1-16)
-  #EE# #EE# local __originals=${2}
-
-  #EE# if [[ "CCS" == "${BACKEND}" ]]; then
-    #EE# read -a originals <<< $(ice group list | grep -v 'Group Id' | grep " ${__prefix}" | awk '{print $1}')
-  #EE# elif [[ "APPS" == "${BACKEND}" ]]; then
-    #EE# read -a originals <<< $(cf apps | grep -v "^Getting" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep -v "^name" | grep "${__prefix}" | awk '{print $1}')
-  #EE# else
-    #EE# >&2 echo "ERROR: Unknown backend ${BACKEND}; expected one of \"CCS\" or \"APPS\""
-    #EE# return 3
-  #EE# fi
-  
-  #EE# echo ${#originals[@]} original groups found: ${originals[@]}
-#EE# }
-
 #EE# acting funny, fix later
 function find_route(){
   local __originals=()
@@ -69,24 +53,22 @@ function find_route(){
 
 # Validate needed inputs or set defaults
 
-# Setup pipeline slave
-cf apps
-slave_setup
-cf apps
+#init## Setup pipeline slave
+#init#cf apps
+#init#slave_setup
+#init#cf apps
+which cf
+cf --version
 
-#MK##EE# TODO: pass in originals variable
-#MK#get_originals ${CF_APP}
 originals=($(groupList))
+successor="${NAME}_${BUILD_NUMBER}"
 
-successor="${CF_APP}_${BUILD_NUMBER}"
-
-# Deploy the new version
-# deployGroup "${successor}"
+# map/scale original deployment if necessary
 if (( ${#originals[@]} )); then
   echo "Not initial version"
 else
   echo "Initial version,scaling"
-  scaleGroup ${successor} 4
+  scaleGroup ${successor} ${SCALE}
   echo "Initial version, mapping route"
   mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
 fi
@@ -131,7 +113,7 @@ if (( 0 < ${#ROUTED[@]} )); then
   original_grp_id=${original_grp#_*}
 fi
 
-successor_grp=${CF_APP}_${UPDATE_ID}
+successor_grp=${NAME}_${UPDATE_ID}
 
 echo "Original group: ${original_grp} (${original_grp_id})"
 echo "Successor group: ${successor_grp}  (${UPDATE_ID})"
@@ -145,7 +127,6 @@ if [[ -n "${original_grp}" ]]; then
   create_command="cf active-deploy-create ${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
   
   if [[ -n "${RAMPUP}" ]]; then create_command="${create_command} --rampup ${RAMPUP}s"; fi
-  #EE# if [[ -n "${TEST}" ]]; then create_command="${create_command} --test ${TEST}s"; fi
   if [[ -n "${RAMPDOWN}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN}s"; fi
   
   echo "Executing update: ${create_command}"
@@ -161,9 +142,6 @@ if [[ -n "${original_grp}" ]]; then
   cf active-deploy-show $update --timeout 60s
   
   # Wait for completion
-  #EE# wait_for_update $update rampdown 600 && rc=$? || rc=$?
-  #EE# echo "wait result is $rc"
-  
   wait_for_update $update test 600 && rc=$? || rc=$?
   
   cf active-deploy-advance $update
@@ -172,19 +150,12 @@ if [[ -n "${original_grp}" ]]; then
   
   cf active-deploy-list
   
-  #EE# if (( $rc )); then
-    #EE# echo "ERROR: update failed"
-    #EE# echo cf-active-deploy-rollback $update
-    #EE# wait_for_update $update initial 600 && rc=$? || rc=$?
-    #EE# cf active-deploy-delete $update -f
-    #EE# exit 1
-  #EE# fi
-  
   if (( $rc )); then
-    echo "Advance to testing failed; rolling back update $update"
+    echo "Advance from rampup failed; rolling back update $update"
     rollback $update || true
     if (( $rollback_rc )); then
       echo "WARN: Unable to rollback update"
+      cf active-deploy-list $update
     fi 
     
     # Cleanup - delete update record
@@ -193,6 +164,7 @@ if [[ -n "${original_grp}" ]]; then
     if (( $delete_rc )); then
       echo "WARN: Unable to delete update record $update"
     fi
+    exit 1
   fi
   
 fi

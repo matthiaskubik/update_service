@@ -1,52 +1,5 @@
 #/bin/bash
 
-
-# TODO: Move to plugin init script
-# Install a suitable version of the CloudFoundary CLI (cf. https://github.com/cloudfoundry/cli/releases)
-# Include the installed binary in $PATH
-# Usage: install_cf
-function install_cf() {  
-  #EE# TODO: Change directory
-  #MK# TODO: Move to plugin
-  mkdir /tmp/cf
-  __target_loc="/tmp/cf"
-
-  if [[ -z ${which_cf} || -z $(cf --version | grep "version 6\.13\.0") ]]; then
-    local __tmp=/tmp/cf$$.tgz
-    wget -O ${__tmp} 'https://cli.run.pivotal.io/stable?release=linux64-binary&version=6.13.0&source=github-rel'
-    tar -C ${__target_loc} -xzf ${__tmp}
-    rm -f ${__tmp}
-  fi
-  export PATH=/tmp/cf:$PATH
-}
-
-
-# TODO: Move to plugin init script
-# Install the latest version of the ActiveDeploy CLI (from http://plugins.ng.bluemix.net)
-# Usage: install_active_deploy
-function install_active_deploy() {
-  cf uninstall-plugin active-deploy || true
-  # cf install-plugin ${SCRIPTDIR}/active-deploy-linux-amd64-0.1.38
-  if [[ -z $(cf list-plugin-repos | grep "bluemix") ]]; then
-    cf add-plugin-repo bluemix http://plugins.ng.bluemix.net
-  fi
-  cf install-plugin active-deploy -r bluemix -f
-}
-
-
-# TODO: Move to plugin init script
-# Install a CloudFoundary and ActiveDeploy CLIs; provide debugging information
-# Usage: slave_setup
-function slave_setup() {
-  install_cf
-  cf --version
-  install_active_deploy
-
-  cf plugins
-  cf active-deploy-service-info
-}
-
-
 # Convert a string representation of a phase into an integer to be used for comparison purposes.
 # Usage: phase_id phase
 function phase_id () {

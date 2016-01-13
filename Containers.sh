@@ -1,5 +1,7 @@
 #!/bin/bash
 
+## TODO use Osthanes ice utilities
+#
 
 # Return list of names of existing versions
 # Usage: groupList
@@ -13,18 +15,10 @@ function groupList() {
 # Delete a group
 # Usage groupDelete name
 function groupDelete() {
-  cf delete ${1} -f
-  ## TODO error checking on result of cf delete call
-}
-
-
-# Create a new version with 1 member and no routes
-# Usage: deployGroup name
-function deployGroup() {
   local __name="${1}"
   
-  cf push "${__name}" --no-route -i 1 && rc=$? || rc=$?
-  return ${rc}
+  ice group rm --force ${__name} 
+  ## wait for delete to complete?
 }
 
 
@@ -35,7 +29,7 @@ function mapRoute() {
   local __domain="${2}"
   local __host="${3}"
   
-  cf map-route ${__name} ${__domain} -n ${host} && rc=$? || rc=$?
+  ice route map --hostname ${__host} --domain ${__domain} ${__name} && rc=$? || rc=$?
   return ${rc}
 }
 
@@ -46,6 +40,7 @@ function scaleGroup() {
   local __name="${1}"
   local __size=${2}
   
-  cf scale ${__name} -i ${__size} && rc=$? || rc=$?
+  #TODO: ice group update --max ${__size} ${__name} && rc=$? || rc=$?
+  ice group update --desired ${__size} ${__name} && rc=$? || rc=$?
   return ${rc}
 }

@@ -23,7 +23,7 @@ function clean() {
 
   # Identify list of build numbers to keep
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    TO_KEEP[${i}]="${CF_APP}_$((${BUILD_NUMBER}-${i}))"
+    TO_KEEP[${i}]="${NAME}_$((${BUILD_NUMBER}-${i}))"
   done
 
   local NAME_ARRAY=($(groupList))
@@ -59,8 +59,8 @@ if [[ -z ${USER_TEST} ]]; then export USER_TEST="true"; fi
 slave_setup
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
-# involving the add / container named "${CF_APP}_${UPDATE_ID}"
-in_prog=$(cf active-deploy-list | grep "${CF_APP}_${UPDATE_ID}")
+# involving the add / container named "${NAME}_${UPDATE_ID}"
+in_prog=$(cf active-deploy-list | grep "${NAME}_${UPDATE_ID}")
 read -a array <<< "$in_prog"
 CREATE=${array[0]}
 echo "========> id in progress: ${CREATE}"
