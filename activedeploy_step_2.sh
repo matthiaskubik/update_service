@@ -26,12 +26,12 @@ find . -print
 # Pull in common methods
 source "${SCRIPTDIR}/activedeploy_common.sh"
 
-# Identify BACKEND (APPS or CONTAINERS) and pull in specific implementations
-if [[ -z ${BACKEND} ]]; then
-  echo "ERROR: Backend not specified"
+# Identify TARGET_PLATFORM (CloudFoundry or Container) and pull in specific implementations
+if [[ -z ${TARGET_PLATFORM} ]]; then
+  echo "ERROR: Target platform not specified"
   exit 1
 fi
-source "${SCRIPTDIR}/${BACKEND}.sh"
+source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 
 ###################################################################################
 function clean() {

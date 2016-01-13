@@ -23,12 +23,12 @@ find . -print
 # Pull in common methods
 source ${SCRIPTDIR}/activedeploy_common.sh
 
-# Identify BACKEND (APPS or CONTAINERS) and pull in specific implementations
-if [[ -z ${BACKEND} ]]; then
-  echo "ERROR: Backend not specified"
+# Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
+if [[ -z ${TARGET_PLATFORM} ]]; then
+  echo "ERROR: Target platform not specified"
   exit 1
 fi
-source "${SCRIPTDIR}/${BACKEND}.sh"
+source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 
 ###################################################################################
 
@@ -66,12 +66,6 @@ function find_route(){
 
 ###################################################################################
 
-# Validate needed inputs or set defaults
-
-#init## Setup pipeline slave
-#init#cf apps
-#init#slave_setup
-#init#cf apps
 which cf
 cf --version
 
