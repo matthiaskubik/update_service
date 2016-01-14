@@ -66,6 +66,11 @@ function find_route(){
 
 ###################################################################################
 
+if [[ -z ${GROUP_SIZE} ]]; then
+  export GROUP_SIZE=1
+  echo "Group size not specified; using 1"
+fi
+
 which cf
 cf --version
 
@@ -77,7 +82,7 @@ if (( ${#originals[@]} )); then
   echo "Not initial version"
 else
   echo "Initial version,scaling"
-  scaleGroup ${successor} ${SCALE}
+  scaleGroup ${successor} ${GROUP_SIZE}
   echo "Initial version, mapping route"
   mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
 fi
@@ -135,8 +140,8 @@ if [[ -n "${original_grp}" ]]; then
  
   create_command="cf active-deploy-create ${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
   
-  if [[ -n "${RAMPUP}" ]]; then create_command="${create_command} --rampup ${RAMPUP}s"; fi
-  if [[ -n "${RAMPDOWN}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN}s"; fi
+  if [[ -n "${RAMPUP_DURATION}" ]]; then create_command="${create_command} --rampup ${RAMPUP_DURATION}s"; fi
+  if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN_DURATION}s"; fi
   
   echo "Executing update: ${create_command}"
   update=$(${create_command})
