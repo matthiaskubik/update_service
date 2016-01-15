@@ -91,7 +91,7 @@ successor="${NAME}_${BUILD_NUMBER}"
 if (( ${#originals[@]} )); then
   echo "Not initial version"
 else
-  echo "Initial version,scaling"
+  echo "Initial version, scaling"
   scaleGroup ${successor} ${GROUP_SIZE}
   echo "Initial version, mapping route"
   mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
