@@ -146,12 +146,13 @@ cf active-deploy-list --timeout 60s
 
 # Do update if there is an original group
 if [[ -n "${original_grp}" ]]; then
-  echo "Beginning active-deploy update..."
+  echo "Beginning update with cf active-deploy-create ..."
  
   create_command="cf active-deploy-create ${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
   
-  if [[ -n "${RAMPUP_DURATION}" ]]; then create_command="${create_command} --rampup ${RAMPUP_DURATION}s"; fi
-  if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN_DURATION}s"; fi
+  if [[ -n "${RAMPUP_DURATION}" ]]; then create_command="${create_command} --rampup ${RAMPUP_DURATION}"; fi
+  if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN_DURATION}"; fi
+  create_command="${create_command} --test 1s";
   
   echo "Executing update: ${create_command}"
   update=$(${create_command})

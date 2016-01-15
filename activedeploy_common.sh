@@ -50,7 +50,7 @@ function phase_id () {
 }
 
 
-# What for active deploy to reach a particular phase
+# Wait for active deploy to reach a particular phase
 # Usage: wait_for_update update-identifier target-phase wait-time
 #    where update-identifier is 
 #          target-phase is string representation of target phase to await
