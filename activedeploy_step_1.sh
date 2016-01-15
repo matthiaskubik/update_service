@@ -71,6 +71,16 @@ if [[ -z ${GROUP_SIZE} ]]; then
   echo "Group size not specified; using 1"
 fi
 
+if [[ -z ${RAMPUP_DURATION} ]]; then
+  export RAMPUP_DURATION="5m"
+  echo "Rampup duration not specified; using ${RAMPUP_DURATION}"
+fi
+
+if [[ -z ${RAMPDOWN_DURATION} ]]; then
+  export RAMPDOWN_DURATION="5m"
+  echo "Group size not specified; using ${RAMPDOWN_DURATION}"
+fi
+
 which cf
 cf --version
 
