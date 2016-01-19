@@ -334,7 +334,6 @@ function wait_phase_completion() {
     else
       >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
     fi
-    >&2 echo "__expected_duration=\"${__expected_duration}\""
     # determine the expected time if haven't done so already; update end_time
     if [[ "0" = "${__expected_duration}" ]]; then
       __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
