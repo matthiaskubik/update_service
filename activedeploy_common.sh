@@ -195,7 +195,8 @@ function advance() {
   cf active-deploy-show ${__update_id}
 
   cf active-deploy-advance ${__update_id}
-  wait_for_update ${__update_id} rampdown 600 && rc=$? || rc=$?
+  wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
+  # wait_for_update ${__update_id} rampdown 600 && rc=$? || rc=$?
   
   echo "Return code for advance is ${rc}"
   return ${rc}
@@ -209,7 +210,8 @@ function rollback() {
   cf active-deploy-show ${__update_id}
 
   cf active-deploy-rollback ${__update_id}
-  wait_for_update ${__update_id} initial 600 && rc=$? || rc=$?
+  wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
+  # wait_for_update ${__update_id} initial 600 && rc=$? || rc=$?
   
   echo "Return code for rollback is ${rc}"
   return ${rc}
@@ -241,8 +243,8 @@ function to_seconds() {
     __time="${__time}0s"
   fi
 
-  times=($(echo $__time | sed 's/h/ /' | sed 's/m/ /' | sed 's/s/ /'))
-  >&2 echo ${__orig_time} ${__time} ${times[@]}
+  IFS=' ' read -r -a times <<< $(echo $__time | sed 's/h/ /' | sed 's/m/ /' | sed 's/s//')
+  # >&2 echo "${__orig_time} ${__time} ${times[@]}"
 
   seconds=$(printf %0.f $(expr ${times[0]}*3600+${times[1]}*60+${times[2]} | bc))
   echo ${seconds}
@@ -260,18 +262,20 @@ function to_seconds() {
 #    9 - waited 3x phase duration and it wasn't finished
 function wait_phase_completion() {
   local __update_id="${1}"
-  local __max_wait="${2}"
+  # Small default value to get us into the loop where we will compute it
+  local __max_wait=10
+  local __expected_duration=0
 
   if [[ -z ${__update_id} ]]; then
     >&2 echo "ERROR: Expected update identifier to be passed into wait_for" 
     return 1
   fi
 
-  start_time=$(date +%s)
-  end_time=$(expr ${start_time} + ${__max_wait})
-  >&2 echo "wait from ${start_time} to ${end_time} for update to complete"
-  counter=0
-	
+  local start_time=$(date +%s)
+  
+  >&2 echo "Update ${__update_id} called wait at ${start_time}"
+  
+  local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
   while (( $(date +%s) < ${end_time} )); do
     IFS=$'\n' properties=($(cf active-deploy-show ${__update_id} | grep ':'))
 
@@ -327,6 +331,16 @@ function wait_phase_completion() {
       # The phase is completed
       >&2 echo "Phase ${update_phase} is complete"
       return 0
+    else
+      >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
+    fi
+    >&2 echo "__expected_duration=\"${__expected_duration}\""
+    # determine the expected time if haven't done so already; update end_time
+    if [[ "0" = "${__expected_duration}" ]]; then
+      __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
+      __max_wait=$(expr ${__expected_duration}*3 | bc)
+      end_time=$(expr ${start_time} + ${__max_wait})
+      >&2 echo "Phase ${update_phase} has an expected duration of ${__expected_duration}s; will wait ${__max_wait}s ending at ${end_time}"
     fi
 
     sleep 3
