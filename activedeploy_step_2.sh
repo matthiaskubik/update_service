@@ -77,34 +77,34 @@ slave_setup
 # involving the add / container named "${NAME}_${UPDATE_ID}"
 in_prog=$(cf active-deploy-list | grep "${NAME}_${UPDATE_ID}")
 read -a array <<< "$in_prog"
-CREATE=${array[0]}
-echo "========> id in progress: ${CREATE}"
-cf active-deploy-show ${CREATE}
+update_id=${array[0]}
+echo "========> id in progress: ${update_id}"
+cf active-deploy-show ${update_id}
 
-IFS=$'\n' properties=($(cf active-deploy-show ${CREATE} | grep ':'))
+IFS=$'\n' properties=($(cf active-deploy-show ${update_id} | grep ':'))
 update_status=$(get_property 'status' ${properties[@]})
 if [[ "${update_status}" != 'in_progress' ]]; then
   echo "Deployment in unexpected status: ${update_status}"
-  rollback ${CREATE}
-  delete ${CREATE}
+  rollback ${update_id}
+  delete ${update_id}
   exit 1
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
 if [ "$USER_TEST" = true ]; then
-  "Test success -- completing update ${CREATE}"
-  advance ${CREATE}  && rc=$? || rc=$?
+  "Test success -- completing update ${update_id}"
+  advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
   if (( $rc )); then
-    echo "Advance to rampdown failed; rolling back update ${CREATE}"
-    rollback ${CREATE} || true
+    echo "Advance to rampdown failed; rolling back update ${update_id}"
+    rollback ${update_id} || true
     if (( $rollback_rc )); then
       echo "WARN: Unable to rollback update"
     fi 
   fi
 else
-  echo "Test failure -- rolling back update ${CREATE}"
-  rollback ${CREATE} && rc=$? || rc=$?
+  echo "Test failure -- rolling back update ${update_id}"
+  rollback ${update_id} && rc=$? || rc=$?
 fi
 
 # Cleanup - delete older updates
@@ -115,9 +115,9 @@ fi
 
 # Cleanup - delete update record
 echo "Deleting upate record"
-delete ${CREATE} && delete_rc=$? || delete_rc=$?
+delete ${update_id} && delete_rc=$? || delete_rc=$?
 if (( $delete_rc )); then
-  echo "WARN: Unable to delete update record ${CREATE}"
+  echo "WARN: Unable to delete update record ${update_id}"
 fi
 
 exit $rc
