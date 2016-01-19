@@ -224,3 +224,114 @@ function delete() {
 
   cf active-deploy-delete ${__update_id} --force
 }
+
+# Convert expression of the form HhMmSs to an integer representing seconds
+function to_seconds() {
+  local __time="${1}"
+  local __orig_time=${__time}
+
+  if [[ $__time != *h* ]]; then
+    __time="0h${__time}"
+  fi
+  if [[ $__time != *m* ]]; then
+    # already has an 'h'
+    __time=$(echo $__time | sed 's/h/h0m/')
+  fi
+  if [[ $__time != *s ]]; then
+    __time="${__time}0s"
+  fi
+
+  times=($(echo $__time | sed 's/h/ /' | sed 's/m/ /' | sed 's/s/ /'))
+  >&2 echo ${__orig_time} ${__time} ${times[@]}
+
+  seconds=$(printf %0.f $(expr ${times[0]}*3600+${times[1]}*60+${times[2]} | bc))
+  echo ${seconds}
+}
+
+
+# Wait for current phase to complete
+# Usage: wait_phase_completion update_id max_wait
+# Response codes:
+#    0 - the is at the end of the current phase
+#    1 - the update has a status of 'completed' (or the phase is the 'completed' phase)
+#    2 - the update has a status of 'rolled back' (or the phase is the 'iniital' phase)
+#    3 - the update has a status of'failed'
+#    5 - the update has an unknown status or unknown phase
+#    9 - waited 3x phase duration and it wasn't finished
+function wait_phase_completion() {
+  local __update_id="${1}"
+  local __max_wait="${2}"
+
+  if [[ -z ${__update_id} ]]; then
+    >&2 echo "ERROR: Expected update identifier to be passed into wait_for" 
+    return 1
+  fi
+
+  start_time=$(date +%s)
+  end_time=$(expr ${start_time} + ${__max_wait})
+  >&2 echo "wait from ${start_time} to ${end_time} for update to complete"
+  counter=0
+	
+  while (( $(date +%s) < ${end_time} )); do
+    IFS=$'\n' properties=($(cf active-deploy-show ${__update_id} | grep ':'))
+
+    update_phase=$(get_property 'phase' ${properties[@]})
+    update_status=$(get_property 'status' ${properties[@]})
+
+    case "${update_status}" in
+      completed) # whole update is completed
+      return 1
+      ;;
+      rolled\ back)
+      return 2
+      ;;
+      failed)
+      return 3
+      ;;
+      paused)
+      # attempt to resume
+      >&2 echo "Update ${__update_id} is paused; attempting to resume"
+      cf active-deploy-resume ${__update_id}
+      # TODO deal with failures
+      ;;
+      in_progress)
+      ;;
+      *)
+      >&2 echo "ERROR: Unknown status: ${update_status}"
+      >&2 echo "${properties[@]}"
+      return 5
+      ;;
+    esac
+
+	# the status is 'in_progress'
+    case "${update_phase}" in
+      initial)
+      # should only happen if status is rolled back -- so should never get here
+      return 2
+      ;;
+      completed)
+      # should only happen if status is completed -- so should never get here
+      return 1
+      ;;
+      rampup|test|rampdown)
+      ;;
+      *)
+      >&2 echo "ERROR: Unknown phase: ${update_phase}"
+      return 5
+    esac
+
+    >&2 echo "Update ${__update_id} is ${update_status} in phase ${update_phase}"
+
+    phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
+    if [[ "${phase_progress}" =~ completed* ]]; then
+      # The phase is completed
+      >&2 echo "Phase ${update_phase} is complete"
+      return 0
+    fi
+
+    sleep 3
+  done
+  
+  return 9 # took too long
+}
+
