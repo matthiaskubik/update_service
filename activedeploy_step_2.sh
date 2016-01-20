@@ -72,7 +72,7 @@ if [[ -z ${USER_TEST} ]]; then export USER_TEST="true"; fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}_${UPDATE_ID}"
-in_prog=$(cf active-deploy-list | grep "${NAME}_${UPDATE_ID}")
+in_prog=$(cf active-deploy-list | grep "${NAME}_${UPDATE_ID}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
 echo "========> id in progress: ${update_id}"
