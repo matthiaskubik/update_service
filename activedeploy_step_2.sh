@@ -88,7 +88,8 @@ if [[ "${update_status}" != 'in_progress' ]]; then
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
-if [[ -z "${TEST_RESULT_FOR_AD}" ]] && [[ "${TEST_RESULT_FOR_AD}" = "0" ]]; then
+#if [[ -z "${TEST_RESULT_FOR_AD}" ]] && [[ "${TEST_RESULT_FOR_AD}" = "0" ]]; then
+if [[ [[ "${USER_TEST}" = "true" ]]; then
   echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
