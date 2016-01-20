@@ -97,17 +97,20 @@ if [ "$USER_TEST" = true ]; then
     rollback ${update_id} || true
     if (( $rollback_rc )); then
       echo "WARN: Unable to rollback update"
+      echo $(wait_comment $rollback_rc)
     fi 
   fi
 else
   echo "Test failure -- rolling back update ${update_id}"
   rollback ${update_id} && rc=$? || rc=$?
+  if (( $rc )); echo $(wait_comment $rc); fi
 fi
 
 # Cleanup - delete older updates
 clean && clean_rc=$? || clean_rc=$?
 if (( $clean_rc )); then
   echo "WARN: Unable to delete old versions."
+  echo $(wait_comment $clean_rc)
 fi
 
 # Cleanup - delete update record

@@ -81,8 +81,8 @@ if [[ -z ${RAMPDOWN_DURATION} ]]; then
   echo "Group size not specified; using ${RAMPDOWN_DURATION}"
 fi
 
-which cf
-cf --version
+log_and_echo "$INFO" $(which cf)
+log_and_echo "$INFO" $(cf --version)
 
 originals=($(groupList))
 successor="${NAME}_${BUILD_NUMBER}"
