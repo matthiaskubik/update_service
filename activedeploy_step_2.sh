@@ -104,6 +104,8 @@ else
   echo "Test failure -- rolling back update ${update_id}"
   rollback ${update_id} && rc=$? || rc=$?
   if (( $rc )); then echo $(wait_comment $rc); fi
+  # rc will be the exit code; we want a failure code if there was a rollback
+  rc=2
 fi
 
 # Cleanup - delete older updates
