@@ -89,7 +89,7 @@ fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
 if [ "$USER_TEST" = true ]; then
-  "Test success -- completing update ${update_id}"
+  echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
   if (( $rc )); then
