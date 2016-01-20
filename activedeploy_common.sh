@@ -298,7 +298,7 @@ function wait_phase_completion() {
       cf active-deploy-resume ${__update_id}
       # TODO deal with failures
       ;;
-      in_progress)
+      in_progress|rolling\ back)
       ;;
       *)
       >&2 echo "ERROR: Unknown status: ${update_status}"
