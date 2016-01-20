@@ -172,7 +172,7 @@ if [[ -n "${original_grp}" ]]; then
   echo "wait result is $rc"
   
   if (( $rc )); then
-    echo "Advance from rampup failed; rolling back update $update"
+    echo "Rampup failed; rolling back update $update"
     echo $(wait_comment $rc)
     rollback $update || true
     if (( $rollback_rc )); then
@@ -191,4 +191,6 @@ if [[ -n "${original_grp}" ]]; then
     # no error ... advance to test phase
     cf active-deploy-advance $update
   fi
+
+  cf active-deploy-list
 fi
