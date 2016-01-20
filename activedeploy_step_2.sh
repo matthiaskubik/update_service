@@ -64,11 +64,11 @@ function clean() {
 # if CONCURRENT_VERSIONS not set assume default of 1 (keep just the latest deployed version)
 if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
-# If USER_TEST not set, assume the test succeeded. If the value wasn't set, then the user
+# If TEST_RESULT_FOR_AD not set, assume the test succeeded. If the value wasn't set, then the user
 # didn't modify the test job. However, we got to this job, so the test job must have 
 # completed successfully. Note that we are assuming that a test failure would terminate 
 # the pipeline.  
-if [[ -z ${USER_TEST} ]]; then export USER_TEST="true"; fi
+if [[ -z ${TEST_RESULT_FOR_AD} ]]; then export TEST_RESULT_FOR_AD="0"; fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}_${UPDATE_ID}"
@@ -88,7 +88,7 @@ if [[ "${update_status}" != 'in_progress' ]]; then
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
-if [ "$USER_TEST" = true ]; then
+if [ "$TEST_RESULT_FOR_AD" = "0" ]; then
   echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
