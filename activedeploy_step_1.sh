@@ -166,17 +166,14 @@ if [[ -n "${original_grp}" ]]; then
   echo "Initiated update: ${update}"
   cf active-deploy-show $update --timeout 60s
   
-  # Wait for completion
-  wait_for_update $update test 600 && rc=$? || rc=$?
-  
-  cf active-deploy-advance $update
-  
+  # Wait for completion of rampup phase
+  # wait_for_update $update test 600 && rc=$? || rc=$?
+  wait_phase_completion $update && rc=$? || rc=$?
   echo "wait result is $rc"
-  
-  cf active-deploy-list
   
   if (( $rc )); then
     echo "Advance from rampup failed; rolling back update $update"
+    echo $(wait_comment $rc)
     rollback $update || true
     if (( $rollback_rc )); then
       echo "WARN: Unable to rollback update"
@@ -190,6 +187,8 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record $update"
     fi
     exit 1
+  else
+    # no error ... advance to test phase
+    cf active-deploy-advance $update
   fi
-  
 fi
