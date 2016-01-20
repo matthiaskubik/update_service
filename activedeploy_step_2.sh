@@ -21,8 +21,6 @@ set -x # trace steps
 
 # Log some helpful information for debugging
 env
-echo "FOO is $FOO"
-echo "BAR is $BAR"
 find . -print
 
 # Pull in common methods
@@ -90,8 +88,7 @@ if [[ "${update_status}" != 'in_progress' ]]; then
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
-#if [[ -z "${TEST_RESULT_FOR_AD}" ]] && [[ "${TEST_RESULT_FOR_AD}" = "0" ]]; then
-if [[ "${USER_TEST}" = "true" ]]; then
+if [[ "${TEST_RESULT_FOR_AD}" = "0" ]]; then
   echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
