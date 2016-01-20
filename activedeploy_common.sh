@@ -376,5 +376,6 @@ function wait_comment() {
     *)
     echo "unknown reason: ${__rc}"
     ;;
+  esac
 }
 
