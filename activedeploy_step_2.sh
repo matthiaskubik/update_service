@@ -68,7 +68,7 @@ if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 # didn't modify the test job. However, we got to this job, so the test job must have 
 # completed successfully. Note that we are assuming that a test failure would terminate 
 # the pipeline.  
-if [[ -z ${TEST_RESULT_FOR_AD} ]]; then export TEST_RESULT_FOR_AD="0"; fi
+#if [[ -z ${TEST_RESULT_FOR_AD} ]]; then export TEST_RESULT_FOR_AD="0"; fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}_${UPDATE_ID}"
@@ -88,7 +88,7 @@ if [[ "${update_status}" != 'in_progress' ]]; then
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
-if [ "$TEST_RESULT_FOR_AD" = "0" ]; then
+if [[ -z "${TEST_RESULT_FOR_AD}" ]] && [[ "${TEST_RESULT_FOR_AD}" = "0" ]]; then
   echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
@@ -105,8 +105,7 @@ else
   rollback ${update_id} && rc=$? || rc=$?
   if (( $rc )); then echo $(wait_comment $rc); fi
   # rc will be the exit code; we want a failure code if there was a rollback
-  rc=2
-fi
+  rc=2 fi
 
 # Cleanup - delete older updates
 clean && clean_rc=$? || clean_rc=$?
