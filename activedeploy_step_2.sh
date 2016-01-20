@@ -103,7 +103,7 @@ if [ "$USER_TEST" = true ]; then
 else
   echo "Test failure -- rolling back update ${update_id}"
   rollback ${update_id} && rc=$? || rc=$?
-  if (( $rc )); echo $(wait_comment $rc); fi
+  if (( $rc )); then echo $(wait_comment $rc); fi
 fi
 
 # Cleanup - delete older updates
