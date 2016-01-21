@@ -21,7 +21,6 @@ set -x # trace steps
 
 # Log some helpful information for debugging
 env
-find . -print
 
 # Pull in common methods
 source "${SCRIPTDIR}/activedeploy_common.sh"
@@ -66,12 +65,6 @@ function clean() {
 # if CONCURRENT_VERSIONS not set assume default of 1 (keep just the latest deployed version)
 if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
-# If TEST_RESULT_FOR_AD not set, assume the test succeeded. If the value wasn't set, then the user
-# didn't modify the test job. However, we got to this job, so the test job must have 
-# completed successfully. Note that we are assuming that a test failure would terminate 
-# the pipeline.  
-#if [[ -z ${TEST_RESULT_FOR_AD} ]]; then export TEST_RESULT_FOR_AD="0"; fi
-
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}"
 in_prog=$(cf active-deploy-list | grep "${NAME}" | grep "in_progress")
@@ -79,7 +72,7 @@ read -a array <<< "$in_prog"
 update_id=${array[0]}
 echo "========> id in progress: ${update_id}"
 if [[ -z "${update_id}" ]]; then
-  echo "ERROR: Unable to identify an active update in progress"
+  echo "ERROR: Unable to identify an active update in progress for successor ${NAME}"
   cf active-deploy-list
   exit 5
 fi
@@ -87,11 +80,22 @@ cf active-deploy-show ${update_id}
 
 IFS=$'\n' properties=($(cf active-deploy-show ${update_id} | grep ':'))
 update_status=$(get_property 'status' ${properties[@]})
+
+# TODO handle other statuses better: could be rolled back, rolling back, paused, failed, ...
+# Insufficient to leave it and let the wait_phase_completion deal with it; the call to advance/rollback could fail
 if [[ "${update_status}" != 'in_progress' ]]; then
   echo "Deployment in unexpected status: ${update_status}"
   rollback ${update_id}
   delete ${update_id}
   exit 1
+fi
+
+# If TEST_RESULT_FOR_AD not set, assume the test succeeded. If the value wasn't set, then the user
+# didn't modify the test job. However, we got to this job, so the test job must have 
+# completed successfully. Note that we are assuming that a test failure would terminate 
+# the pipeline.  
+if [[ -z ${TEST_RESULT_FOR_AD} ]]; then 
+  TEST_RESULT_FOR_AD=0;
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
