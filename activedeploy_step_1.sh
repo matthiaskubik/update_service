@@ -88,13 +88,13 @@ originals=($(groupList))
 successor="${NAME}"
 
 # map/scale original deployment if necessary
-if (( ${#originals[@]} )); then
-  echo "Not initial version"
-else
+if [[ 1 = ${#originals[@]} ]]; then
   echo "Initial version, scaling"
   scaleGroup ${successor} ${GROUP_SIZE}
   echo "Initial version, mapping route"
   mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
+else
+  echo "Not initial version"
 fi
 
 # export version of this build
