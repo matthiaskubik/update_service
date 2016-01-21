@@ -93,6 +93,7 @@ if [[ 1 = ${#originals[@]} ]]; then
   scaleGroup ${successor} ${GROUP_SIZE}
   echo "Initial version, mapping route"
   mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
+  exit 0
 else
   echo "Not initial version"
 fi
