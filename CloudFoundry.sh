@@ -18,8 +18,9 @@
 # Return list of names of existing versions
 # Usage: groupList
 function groupList() {
-  # cf apps | awk -v pattern="${NAME}_[0-9]\*" '$1 ~ pattern {print $1}'
-  cf apps | grep "^${NAME}_[0-9]*[[:space:]]" | cut -d' ' -f1
+  PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  # cf apps | awk -v pattern="${PATTERN}_[0-9]\*" '$1 ~ pattern {print $1}'
+  cf apps | grep "^${PATTERN}_[0-9]*[[:space:]]" | cut -d' ' -f1
   ## TODO error checking on result of cf apps call
 }
 

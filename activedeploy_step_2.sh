@@ -37,8 +37,10 @@ source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 function clean() {
 
   # Identify list of build numbers to keep
+  PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    TO_KEEP[${i}]="${NAME}_$((${BUILD_NUMBER}-${i}))"
+    TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
   done
 
   local NAME_ARRAY=($(groupList))
@@ -46,8 +48,8 @@ function clean() {
   for name in ${NAME_ARRAY[@]}; do
     version=$(echo "${name}" | sed 's#.*_##g')
     echo "Considering ${name} with version ${version}"
-    if (( ${version} > ${BUILD_NUMBER} )); then
-      echo "${name} has a version (${version}) greater than the current version (${BUILD_NUMBER})."
+    if (( ${version} > ${VERSION} )); then
+      echo "${name} has a version (${version}) greater than the current version (${VERSION})."
       echo "It will not be removed."
     elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
       echo "${name} will not be deleted"
@@ -71,11 +73,16 @@ if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 #if [[ -z ${TEST_RESULT_FOR_AD} ]]; then export TEST_RESULT_FOR_AD="0"; fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
-# involving the add / container named "${NAME}_${UPDATE_ID}"
-in_prog=$(cf active-deploy-list | grep "${NAME}_${UPDATE_ID}" | grep "in_progress")
+# involving the add / container named "${NAME}"
+in_prog=$(cf active-deploy-list | grep "${NAME}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
 echo "========> id in progress: ${update_id}"
+if [[ -z "${update_id}" ]]; then
+  echo "ERROR: Unable to identify an active update in progress"
+  cf active-deploy-list
+  exit 5
+fi
 cf active-deploy-show ${update_id}
 
 IFS=$'\n' properties=($(cf active-deploy-show ${update_id} | grep ':'))

@@ -85,7 +85,7 @@ log_and_echo "$INFO" $(which cf)
 log_and_echo "$INFO" $(cf --version)
 
 originals=($(groupList))
-successor="${NAME}_${BUILD_NUMBER}"
+successor="${NAME}"
 
 # map/scale original deployment if necessary
 if (( ${#originals[@]} )); then
@@ -137,7 +137,7 @@ if (( 0 < ${#ROUTED[@]} )); then
   original_grp_id=${original_grp#_*}
 fi
 
-successor_grp=${NAME}_${UPDATE_ID}
+successor_grp=${NAME}
 
 echo "Original group: ${original_grp} (${original_grp_id})"
 echo "Successor group: ${successor_grp}  (${UPDATE_ID})"
