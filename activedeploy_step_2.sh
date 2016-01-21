@@ -21,7 +21,6 @@ set -x # trace steps
 
 # Log some helpful information for debugging
 env
-find . -print
 
 # Pull in common methods
 source "${SCRIPTDIR}/activedeploy_common.sh"
@@ -37,8 +36,10 @@ source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 function clean() {
 
   # Identify list of build numbers to keep
+  PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
   for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    TO_KEEP[${i}]="${NAME}_$((${BUILD_NUMBER}-${i}))"
+    TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
   done
 
   local NAME_ARRAY=($(groupList))
@@ -46,8 +47,8 @@ function clean() {
   for name in ${NAME_ARRAY[@]}; do
     version=$(echo "${name}" | sed 's#.*_##g')
     echo "Considering ${name} with version ${version}"
-    if (( ${version} > ${BUILD_NUMBER} )); then
-      echo "${name} has a version (${version}) greater than the current version (${BUILD_NUMBER})."
+    if (( ${version} > ${VERSION} )); then
+      echo "${name} has a version (${version}) greater than the current version (${VERSION})."
       echo "It will not be removed."
     elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
       echo "${name} will not be deleted"
@@ -64,22 +65,24 @@ function clean() {
 # if CONCURRENT_VERSIONS not set assume default of 1 (keep just the latest deployed version)
 if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
-# If USER_TEST not set, assume the test succeeded. If the value wasn't set, then the user
-# didn't modify the test job. However, we got to this job, so the test job must have 
-# completed successfully. Note that we are assuming that a test failure would terminate 
-# the pipeline.  
-if [[ -z ${USER_TEST} ]]; then export USER_TEST="true"; fi
-
 # Identify the active deploy in progress. We do so by looking for a deploy 
-# involving the add / container named "${NAME}_${UPDATE_ID}"
-in_prog=$(cf active-deploy-list | grep "${NAME}_${UPDATE_ID}")
+# involving the add / container named "${NAME}"
+in_prog=$(cf active-deploy-list | grep "${NAME}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
 echo "========> id in progress: ${update_id}"
+if [[ -z "${update_id}" ]]; then
+  echo "ERROR: Unable to identify an active update in progress for successor ${NAME}"
+  cf active-deploy-list
+  exit 5
+fi
 cf active-deploy-show ${update_id}
 
 IFS=$'\n' properties=($(cf active-deploy-show ${update_id} | grep ':'))
 update_status=$(get_property 'status' ${properties[@]})
+
+# TODO handle other statuses better: could be rolled back, rolling back, paused, failed, ...
+# Insufficient to leave it and let the wait_phase_completion deal with it; the call to advance/rollback could fail
 if [[ "${update_status}" != 'in_progress' ]]; then
   echo "Deployment in unexpected status: ${update_status}"
   rollback ${update_id}
@@ -87,9 +90,17 @@ if [[ "${update_status}" != 'in_progress' ]]; then
   exit 1
 fi
 
+# If TEST_RESULT_FOR_AD not set, assume the test succeeded. If the value wasn't set, then the user
+# didn't modify the test job. However, we got to this job, so the test job must have 
+# completed successfully. Note that we are assuming that a test failure would terminate 
+# the pipeline.  
+if [[ -z ${TEST_RESULT_FOR_AD} ]]; then 
+  TEST_RESULT_FOR_AD=0;
+fi
+
 # Either rampdown and complete (on test success) or rollback (on test failure)
-if [ "$USER_TEST" = true ]; then
-  "Test success -- completing update ${update_id}"
+if [[ ${TEST_RESULT_FOR_AD} -eq 0 ]]; then
+  echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
   if (( $rc )); then
@@ -97,17 +108,22 @@ if [ "$USER_TEST" = true ]; then
     rollback ${update_id} || true
     if (( $rollback_rc )); then
       echo "WARN: Unable to rollback update"
+      echo $(wait_comment $rollback_rc)
     fi 
   fi
 else
   echo "Test failure -- rolling back update ${update_id}"
   rollback ${update_id} && rc=$? || rc=$?
+  if (( $rc )); then echo $(wait_comment $rc); fi
+  # rc will be the exit code; we want a failure code if there was a rollback
+  rc=2
 fi
 
 # Cleanup - delete older updates
 clean && clean_rc=$? || clean_rc=$?
 if (( $clean_rc )); then
   echo "WARN: Unable to delete old versions."
+  echo $(wait_comment $clean_rc)
 fi
 
 # Cleanup - delete update record

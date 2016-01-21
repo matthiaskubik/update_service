@@ -298,7 +298,7 @@ function wait_phase_completion() {
       cf active-deploy-resume ${__update_id}
       # TODO deal with failures
       ;;
-      in_progress)
+      in_progress|rolling\ back)
       ;;
       *)
       >&2 echo "ERROR: Unknown status: ${update_status}"
@@ -346,5 +346,36 @@ function wait_phase_completion() {
   done
   
   return 9 # took too long
+}
+
+function wait_comment() {
+
+  local __rc="${1}"
+  case "${__rc}" in
+    0)
+    echo "phase already complete"
+    ;;
+    1)
+    echo "update already complete"
+    ;;
+    2)
+    echo "update already rolled back"
+    ;;
+    3)
+    echo "update failed"
+    ;;
+    4)
+    echo "update paused and could not restart"
+    ;;
+    5)
+    echo "unknown update"
+    ;;
+    9)
+    echo "took too long"
+    ;;
+    *)
+    echo "unknown reason: ${__rc}"
+    ;;
+  esac
 }
 
