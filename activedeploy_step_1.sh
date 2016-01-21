@@ -81,8 +81,8 @@ if [[ -z ${RAMPDOWN_DURATION} ]]; then
   echo "Group size not specified; using ${RAMPDOWN_DURATION}"
 fi
 
-log_and_echo "$INFO" $(which cf)
-log_and_echo "$INFO" $(cf --version)
+which cf
+cf --version
 
 originals=($(groupList))
 successor="${NAME}"
@@ -171,27 +171,73 @@ if [[ -n "${original_grp}" ]]; then
   # wait_for_update $update test 600 && rc=$? || rc=$?
   wait_phase_completion $update && rc=$? || rc=$?
   echo "wait result is $rc"
-  
-  if (( $rc )); then
-    echo "Rampup failed; rolling back update $update"
-    echo $(wait_comment $rc)
-    rollback $update || true
-    if (( $rollback_rc )); then
-      echo "WARN: Unable to rollback update"
-      cf active-deploy-list $update
-    fi 
-    
-    # Cleanup - delete update record
-    echo "Deleting update record"
-    delete $update && delete_rc=$? || delete_rc=$?
-    if (( $delete_rc )); then
-      echo "WARN: Unable to delete update record $update"
-    fi
-    exit 1
-  else
-    # no error ... advance to test phase
+ case "$rc" in
+    0) # phase done
+    # continue (advance to test)
+    echo "Phase done, advance to test"
     cf active-deploy-advance $update
-  fi
+    ;;
+    1) # completed
+    # cannot rollback; delete; return OK 
+    echo "Cannot rollback, phase completed. Deleting update record"
+    delete $update
+    ;;
+    2) # rolled back
+    # delete; return ERROR
+    echo "Rolled back, Deleting update record."
+    delete $update
+    exit 2
+    ;;
+    3) # failed
+    # FAIL; don't delete; return ERROR -- manual intervension may be needed
+    echo "Phase failed, manual intervension may be needed"
+    exit 3
+    ;; 
+    4) # paused; resume failed
+    # FAIL; don't delete; return ERROR -- manual intervension may be needed
+    echo "Resume failed, manual intervension may be needed"
+    exit 4
+    ;;
+    5) # unknown status or phase
+    #rollback; delete; return ERROR
+    echo "Unknown status or phase"
+    rollback $update
+    delete $update
+    exit 5
+    ;;
+    9) # takes too long
+    #rollback; delete; return ERROR
+    echo "Timeout"
+    rollback $update
+    delete $update
+    exit 9
+    ;;
+    *)
+    echo "Problems occurred"
+    exit 1
+    ;;
+  esac
+  
+#  if (( $rc )); then
+#    echo "Rampup failed; rolling back update $update"
+#    echo $(wait_comment $rc)
+#    rollback $update || true
+#    if (( $rollback_rc )); then
+#      echo "WARN: Unable to rollback update"
+#      cf active-deploy-list $update
+#    fi 
+#    
+#    # Cleanup - delete update record
+#    echo "Deleting update record"
+#    delete $update && delete_rc=$? || delete_rc=$?
+#    if (( $delete_rc )); then
+#      echo "WARN: Unable to delete update record $update"
+#    fi
+#    exit 1
+#  else
+#    # no error ... advance to test phase
+#    cf active-deploy-advance $update
+#  fi
 
   cf active-deploy-list
 fi
