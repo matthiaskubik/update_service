@@ -99,7 +99,7 @@ if [[ -z ${TEST_RESULT_FOR_AD} ]]; then
 fi
 
 # Either rampdown and complete (on test success) or rollback (on test failure)
-if [[ "${TEST_RESULT_FOR_AD}" = "0" ]]; then
+if [[ ${TEST_RESULT_FOR_AD} -eq 0 ]]; then
   echo "Test success -- completing update ${update_id}"
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
