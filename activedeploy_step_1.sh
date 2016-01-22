@@ -19,7 +19,7 @@ function print_it() {
 python - <<CODE
 f = open('/home/pipeline/.cf/config.json', 'r')
 for line in f:
- print l
+ print line
 CODE
 }
 
