@@ -88,6 +88,7 @@ fi
 
 which cf
 cf --version
+cf apps
 
 originals=($(groupList))
 successor="${NAME}"
