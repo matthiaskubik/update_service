@@ -89,6 +89,7 @@ fi
 which cf
 cf --version
 cf apps
+cf active-deploy-service-info
 
 originals=($(groupList))
 successor="${NAME}"
