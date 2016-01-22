@@ -19,6 +19,11 @@ SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 set -x
 find . -print
+echo "EXT_DIR=$EXT_DIR"
+if [[ -f $EXT_DIR/cf ]]; then
+  PATH=$EXT_DIR:$PATH
+fi
+echo $PATH
 
 # Pull in common methods
 source ${SCRIPTDIR}/activedeploy_common.sh
