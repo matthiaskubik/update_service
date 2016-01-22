@@ -20,8 +20,8 @@ SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 set -x
 find . -print
 echo "EXT_DIR=$EXT_DIR"
-if [[ -f $EXT_DIR/cf ]]; then
-  PATH=$EXT_DIR:$PATH
+if [[ -f $EXT_DIR/common/cf ]]; then
+  PATH=$EXT_DIR/common:$PATH
 fi
 echo $PATH
 
