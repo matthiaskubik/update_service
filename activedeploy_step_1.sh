@@ -90,6 +90,7 @@ which cf
 cf --version
 cf apps
 cf active-deploy-service-info
+cat ~/.cf/config.json
 
 originals=($(groupList))
 successor="${NAME}"
