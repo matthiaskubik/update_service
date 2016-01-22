@@ -15,6 +15,14 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
+function print_it() {
+python - <<CODE
+f = open('/home/pipeline/.cf/config.json', 'r')
+for line in f:
+ print l
+CODE
+}
+
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 set -x
@@ -91,6 +99,8 @@ cf --version
 cf apps
 cf active-deploy-service-info
 cat ~/.cf/config.json
+echo "======================"
+echo $(print_it)
 
 originals=($(groupList))
 successor="${NAME}"
