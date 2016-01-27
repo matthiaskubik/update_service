@@ -61,6 +61,15 @@ function clean() {
 
 ###################################################################################
 
+# Initial deploy case
+originals=($(groupList))
+if [[ 1 = ${#originals[@]} ]]; then
+  echo "Initial version"
+  exit 0
+else
+  echo "Not initial version"
+fi
+
 # Validate needed inputs or set defaults
 # if CONCURRENT_VERSIONS not set assume default of 1 (keep just the latest deployed version)
 if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
