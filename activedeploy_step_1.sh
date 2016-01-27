@@ -134,19 +134,27 @@ fi
 
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
-  echo "Initial version, scaling"
-  scaleGroup ${successor} ${GROUP_SIZE}
-  echo "Initial version, mapping route"
-  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
+  echo "INFO: Initial version, scaling"
+  scaleGroup ${successor} ${GROUP_SIZE} && rc=$? || rc=$?
+  if (( ${rc} )); then
+    echo "ERROR: Failed to scale ${successor} to ${GROUP_SIZE} instances"
+    exit ${rc}
+  fi
+  echo "INFO: Initial version, mapping route"
+  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME} && rc=$? || rc=$?
+  if (( ${rc} )); then
+    echo "ERROR: Failed to map the route ${ROUTE_DOMAIN}.${ROUTE_HOSTNAME} to ${successor}"
+    exit ${rc}
+  fi
   exit 0
 else
-  echo "Not initial version"
+  echo "INFO: Not initial version"
 fi
 
 successor_grp=${NAME}
 
-echo "Original group: ${original_grp} (${original_grp_id})"
-echo "Successor group: ${successor_grp}  (${UPDATE_ID})"
+echo "INFO: Original group is ${original_grp} (${original_grp_id})"
+echo "INFO: Successor group is ${successor_grp}  (${UPDATE_ID})"
 
 cf active-deploy-list --timeout 60s
 
