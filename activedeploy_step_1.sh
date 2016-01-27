@@ -19,6 +19,11 @@ SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 set -x
 find . -print
+echo "EXT_DIR=$EXT_DIR"
+if [[ -f $EXT_DIR/common/cf ]]; then
+  PATH=$EXT_DIR/common:$PATH
+fi
+echo $PATH
 
 # Pull in common methods
 source ${SCRIPTDIR}/activedeploy_common.sh
@@ -87,17 +92,6 @@ cf --version
 originals=($(groupList))
 successor="${NAME}"
 
-# map/scale original deployment if necessary
-if [[ 1 = ${#originals[@]} ]]; then
-  echo "Initial version, scaling"
-  scaleGroup ${successor} ${GROUP_SIZE}
-  echo "Initial version, mapping route"
-  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
-  exit 0
-else
-  echo "Not initial version"
-fi
-
 # export version of this build
 export UPDATE_ID=${BUILD_NUMBER}
 
@@ -138,10 +132,29 @@ if (( 0 < ${#ROUTED[@]} )); then
   original_grp_id=${original_grp#_*}
 fi
 
+# map/scale original deployment if necessary
+if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
+  echo "INFO: Initial version, scaling"
+  scaleGroup ${successor} ${GROUP_SIZE} && rc=$? || rc=$?
+  if (( ${rc} )); then
+    echo "ERROR: Failed to scale ${successor} to ${GROUP_SIZE} instances"
+    exit ${rc}
+  fi
+  echo "INFO: Initial version, mapping route"
+  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME} && rc=$? || rc=$?
+  if (( ${rc} )); then
+    echo "ERROR: Failed to map the route ${ROUTE_DOMAIN}.${ROUTE_HOSTNAME} to ${successor}"
+    exit ${rc}
+  fi
+  exit 0
+else
+  echo "INFO: Not initial version"
+fi
+
 successor_grp=${NAME}
 
-echo "Original group: ${original_grp} (${original_grp_id})"
-echo "Successor group: ${successor_grp}  (${UPDATE_ID})"
+echo "INFO: Original group is ${original_grp} (${original_grp_id})"
+echo "INFO: Successor group is ${successor_grp}  (${UPDATE_ID})"
 
 cf active-deploy-list --timeout 60s
 
