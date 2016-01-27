@@ -105,17 +105,6 @@ echo $(print_it)
 originals=($(groupList))
 successor="${NAME}"
 
-# map/scale original deployment if necessary
-if [[ 1 = ${#originals[@]} ]]; then
-  echo "Initial version, scaling"
-  scaleGroup ${successor} ${GROUP_SIZE}
-  echo "Initial version, mapping route"
-  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
-  exit 0
-else
-  echo "Not initial version"
-fi
-
 # export version of this build
 export UPDATE_ID=${BUILD_NUMBER}
 
@@ -154,6 +143,17 @@ fi
 if (( 0 < ${#ROUTED[@]} )); then
   original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
   original_grp_id=${original_grp#_*}
+fi
+
+# map/scale original deployment if necessary
+if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
+  echo "Initial version, scaling"
+  scaleGroup ${successor} ${GROUP_SIZE}
+  echo "Initial version, mapping route"
+  mapRoute ${successor} ${ROUTE_DOMAIN} ${ROUTE_HOSTNAME}
+  exit 0
+else
+  echo "Not initial version"
 fi
 
 successor_grp=${NAME}
