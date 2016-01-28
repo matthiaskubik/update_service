@@ -71,6 +71,19 @@ function find_route(){
 
 ###################################################################################
 
+if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
+  export NAME="${CF_APP_NAME}"
+fi
+
+if [[ -z ${NAME} ]] && [[ -n ${CONTAINER_NAME} ]]; then
+  export NAME="${CONTAINER_NAME}"
+fi
+
+if [[ -z ${NAME} ]]; then
+  echo "Environment variable NAME must be set to the name of the successor application or container group"
+  exit 1
+fi
+
 if [[ -z ${GROUP_SIZE} ]]; then
   export GROUP_SIZE=1
   echo "Group size not specified; using 1"
