@@ -71,21 +71,51 @@ function find_route(){
 
 ###################################################################################
 
+# Identify NAME if not set from other likely variables
+if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
+  export NAME="${CF_APP_NAME}"
+fi
+
+if [[ -z ${NAME} ]] && [[ -n ${CONTAINER_NAME} ]]; then
+  export NAME="${CONTAINER_NAME}"
+fi
+
+if [[ -z ${NAME} ]]; then
+  echo "Environment variable NAME must be set to the name of the successor application or container group"
+  exit 1
+fi
+
+# Set default for PORT
+if [[ -z ${PORT} ]]; then
+  export PORT=80
+  echo "Port not specified by environment variable PORT; using ${PORT}"
+fi
+
+# Set default for GROUP_SIZE
 if [[ -z ${GROUP_SIZE} ]]; then
   export GROUP_SIZE=1
-  echo "Group size not specified; using 1"
+  echo "Group size not specified by environment variable GROUP_SIZE; using ${GROUP_SIZE}"
 fi
 
+# Set default for RAMPUP_DURATION
 if [[ -z ${RAMPUP_DURATION} ]]; then
   export RAMPUP_DURATION="5m"
-  echo "Rampup duration not specified; using ${RAMPUP_DURATION}"
+  echo "Rampup duration not specified by environment variable RAMPUP_DURATION; using ${RAMPUP_DURATION}"
 fi
 
+# Set default for RAMPDOWN_DURATION
 if [[ -z ${RAMPDOWN_DURATION} ]]; then
   export RAMPDOWN_DURATION="5m"
-  echo "Group size not specified; using ${RAMPDOWN_DURATION}"
+  echo "Rampdown duration not specified by environment variable RAMPDOWN_DURATION; using ${RAMPDOWN_DURATION}"
 fi
 
+# Set default for ROUTE_HOSTNAME
+if [[ -z ${ROUTE_HOSTNAME} ]]; then
+  export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
+fi
+
+# debug info
 which cf
 cf --version
 
