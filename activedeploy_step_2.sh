@@ -32,6 +32,20 @@ if [[ -z ${TARGET_PLATFORM} ]]; then
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 
+# Identify NAME if not set from other likely variables
+if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
+  export NAME="${CF_APP_NAME}"
+fi
+
+if [[ -z ${NAME} ]] && [[ -n ${CONTAINER_NAME} ]]; then
+  export NAME="${CONTAINER_NAME}"
+fi
+
+if [[ -z ${NAME} ]]; then
+  echo "Environment variable NAME must be set to the name of the successor application or container group"
+  exit 1
+fi
+
 ###################################################################################
 function clean() {
 
