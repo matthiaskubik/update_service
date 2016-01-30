@@ -186,20 +186,20 @@ successor_grp=${NAME}
 echo "INFO: Original group is ${original_grp} (${original_grp_id})"
 echo "INFO: Successor group is ${successor_grp}  (${UPDATE_ID})"
 
-cf active-deploy-list --timeout 60s
+active_deploy list --timeout 60s
 
 # Do update if there is an original group
 if [[ -n "${original_grp}" ]]; then
   echo "Beginning update with cf active-deploy-create ..."
  
-  create_command="cf active-deploy-create ${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
+  create_args="${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
   
-  if [[ -n "${RAMPUP_DURATION}" ]]; then create_command="${create_command} --rampup ${RAMPUP_DURATION}"; fi
-  if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_command="${create_command} --rampdown ${RAMPDOWN_DURATION}"; fi
-  create_command="${create_command} --test 1s";
+  if [[ -n "${RAMPUP_DURATION}" ]]; then create_args="${create_args} --rampup ${RAMPUP_DURATION}"; fi
+  if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_args="${create_args} --rampdown ${RAMPDOWN_DURATION}"; fi
+  create_args="${create_args} --test 1s";
   
-  echo "Executing update: ${create_command}"
-  update=$(${create_command})
+  echo "Executing update: cf active-deploy-create ${create_args}"
+  update=$(active_deploy create ${create_args})
   
   if (( $? )); then
     echo "Failed to initiate active deployment; error was:"
@@ -208,7 +208,7 @@ if [[ -n "${original_grp}" ]]; then
   fi
   
   echo "Initiated update: ${update}"
-  cf active-deploy-show $update --timeout 60s
+  active_deploy show $update --timeout 60s
   
   # Wait for completion of rampup phase
   # wait_for_update $update test 600 && rc=$? || rc=$?
@@ -218,7 +218,7 @@ if [[ -n "${original_grp}" ]]; then
     0) # phase done
     # continue (advance to test)
     echo "Phase done, advance to test"
-    cf active-deploy-advance $update
+    active_deploy advance $update
     ;;
     1) # completed
     # cannot rollback; delete; return OK 
@@ -267,7 +267,7 @@ if [[ -n "${original_grp}" ]]; then
 #    rollback $update || true
 #    if (( $rollback_rc )); then
 #      echo "WARN: Unable to rollback update"
-#      cf active-deploy-list $update
+#      active_deploy list $update
 #    fi 
 #    
 #    # Cleanup - delete update record
@@ -279,8 +279,8 @@ if [[ -n "${original_grp}" ]]; then
 #    exit 1
 #  else
 #    # no error ... advance to test phase
-#    cf active-deploy-advance $update
+#    active_deploy advance $update
 #  fi
 
-  cf active-deploy-list
+  active_deploy list
 fi
