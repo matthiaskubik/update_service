@@ -118,6 +118,7 @@ fi
 # debug info
 which cf
 cf --version
+active_deploy service-info
 
 originals=($(groupList))
 successor="${NAME}"

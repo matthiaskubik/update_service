@@ -19,9 +19,6 @@ SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 set -x # trace steps
 
-# Log some helpful information for debugging
-env
-
 # Pull in common methods
 source "${SCRIPTDIR}/activedeploy_common.sh"
 
@@ -74,6 +71,11 @@ function clean() {
 }
 
 ###################################################################################
+
+# Debug info about cf cli and active-deploy plugins
+which cf
+cf --version
+active_deploy service-info
 
 # Initial deploy case
 originals=($(groupList))
