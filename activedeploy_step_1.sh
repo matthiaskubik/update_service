@@ -122,9 +122,9 @@ if [[ -z ${ROUTE_DOMAIN} ]]; then
   export ROUTE_DOMAIN=$(cf routes | grep ${ROUTE_HOSTNAME} | awk '{print $3}')
   defaulted_domain=1
 fi
-# Strategy #2: Use a domain used by some route
+# Strategy #2: Use most commonly used domain
 if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf routes | tail -1 | grep -E '[a-z0-9]\.' | awk '{print $3}')
+  export ROUTE_DOMAIN=$(cf routes | tail -n +2 | grep -E '[a-z0-9]\.' | awk '{print $3}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
   defaulted_domain=1
 fi
 # Strategy #3: Use a domain available to the user
