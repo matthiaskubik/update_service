@@ -212,7 +212,6 @@ if [[ -n "${original_grp}" ]]; then
   active_deploy show $update --timeout 60s
   
   # Wait for completion of rampup phase
-  # wait_for_update $update test 600 && rc=$? || rc=$?
   wait_phase_completion $update && rc=$? || rc=$?
   echo "wait result is $rc"
  case "$rc" in

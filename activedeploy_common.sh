@@ -85,7 +85,6 @@ function advance() {
 
   active_deploy advance ${__update_id}
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
-  # wait_for_update ${__update_id} rampdown 600 && rc=$? || rc=$?
   
   echo "Return code for advance is ${rc}"
   return ${rc}
@@ -100,7 +99,6 @@ function rollback() {
 
   active_deploy rollback ${__update_id}
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
-  # wait_for_update ${__update_id} initial 600 && rc=$? || rc=$?
   
   echo "Return code for rollback is ${rc}"
   return ${rc}
