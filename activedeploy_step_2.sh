@@ -19,9 +19,6 @@ SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 set -x # trace steps
 
-# Log some helpful information for debugging
-env
-
 # Pull in common methods
 source "${SCRIPTDIR}/activedeploy_common.sh"
 
@@ -75,6 +72,11 @@ function clean() {
 
 ###################################################################################
 
+# Debug info about cf cli and active-deploy plugins
+which cf
+cf --version
+active_deploy service-info
+
 # Initial deploy case
 originals=($(groupList))
 if [[ 1 = ${#originals[@]} ]]; then
@@ -90,18 +92,18 @@ if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}"
-in_prog=$(cf active-deploy-list | grep "${NAME}" | grep "in_progress")
+in_prog=$(active_deploy list | grep "${NAME}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
 echo "========> id in progress: ${update_id}"
 if [[ -z "${update_id}" ]]; then
   echo "ERROR: Unable to identify an active update in progress for successor ${NAME}"
-  cf active-deploy-list
+  active_deploy list
   exit 5
 fi
-cf active-deploy-show ${update_id}
+active_deploy show ${update_id}
 
-IFS=$'\n' properties=($(cf active-deploy-show ${update_id} | grep ':'))
+IFS=$'\n' properties=($(active_deploy show ${update_id} | grep ':'))
 update_status=$(get_property 'status' ${properties[@]})
 
 # TODO handle other statuses better: could be rolled back, rolling back, paused, failed, ...
