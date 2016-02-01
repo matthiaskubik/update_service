@@ -44,31 +44,31 @@ if [[ -z ${NAME} ]]; then
 fi
 
 ###################################################################################
-function clean() {
+# function clean() {
 
-  # Identify list of build numbers to keep
-  PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
-  for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
-  done
+  # # Identify list of build numbers to keep
+  # PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  # VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
+  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
+    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
+  # done
 
-  local NAME_ARRAY=($(groupList))
+  # local NAME_ARRAY=($(groupList))
 
-  for name in ${NAME_ARRAY[@]}; do
-    version=$(echo "${name}" | sed 's#.*_##g')
-    echo "Considering ${name} with version ${version}"
-    if (( ${version} > ${VERSION} )); then
-      echo "${name} has a version (${version}) greater than the current version (${VERSION})."
-      echo "It will not be removed."
-    elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
-      echo "${name} will not be deleted"
-    else # delete it
-      echo "Removing ${name}"
-      groupDelete "${name}"
-    fi
-  done
-}
+  # for name in ${NAME_ARRAY[@]}; do
+    # version=$(echo "${name}" | sed 's#.*_##g')
+    # echo "Considering ${name} with version ${version}"
+    # if (( ${version} > ${VERSION} )); then
+      # echo "${name} has a version (${version}) greater than the current version (${VERSION})."
+      # echo "It will not be removed."
+    # elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
+      # echo "${name} will not be deleted"
+    # else # delete it
+      # echo "Removing ${name}"
+      # groupDelete "${name}"
+    # fi
+  # done
+# }
 
 ###################################################################################
 
