@@ -19,7 +19,6 @@
 # Usage: groupList
 function groupList() {
   PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  # cf apps | awk -v pattern="${PATTERN}_[0-9]\*" '$1 ~ pattern {print $1}'
   cf apps | grep "^${PATTERN}_[0-9]*[[:space:]]" | cut -d' ' -f1
   ## TODO error checking on result of cf apps call
 }

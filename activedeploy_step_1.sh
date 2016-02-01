@@ -132,6 +132,10 @@ if [[ -z ${ROUTE_DOMAIN} ]]; then
   export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
   defaulted_domain=1
 fi
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  echo "Route domain not specified by environment variable ROUTE_DOMAIN and no suitable alternative could be identified"
+  exit 1
+fi
 
 if (( ${defaulted_domain} )); then
   echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
