@@ -53,3 +53,13 @@ function scaleGroup() {
   cf scale ${__name} -i ${__size} && rc=$? || rc=$?
   return ${rc}
 }
+
+# Get the routes mapped to a group
+# Usage: getRoutes name
+function getRoutes() {
+  local __name="${1}"
+
+  IFS=',' read -a routes <<< $(cf app ${__name} | grep "^urls: " | sed 's/urls: //' | sed 's/ //g')
+  echo "${routes[@]}"
+}
+
