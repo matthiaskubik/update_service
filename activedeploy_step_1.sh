@@ -119,7 +119,7 @@ fi
 defaulted_domain=0
 # Strategy #1: Use the domain for the app with the same ROUTE_HOSTNAME as we are using
 if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf routes | grep ${ROUTE_HOSTNAME} | awk '{print $3}')
+  export ROUTE_DOMAIN=$(cf routes | awk '$2 == "${ROUTE_HOSTNAME}" {print $3}')
   defaulted_domain=1
 fi
 # Strategy #2: Use most commonly used domain
