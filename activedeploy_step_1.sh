@@ -115,6 +115,28 @@ if [[ -z ${ROUTE_HOSTNAME} ]]; then
   echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
 fi
 
+# Set default for ROUTE_DOMAIN
+defaulted_domain=0
+# Strategy #1: Use the domain for the app with the same ROUTE_HOSTNAME as we are using
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  export ROUTE_DOMAIN=$(cf routes | awk -v hostname="${ROUTE_HOSTNAME}" '$2 == hostname {print $3}')
+  defaulted_domain=1
+fi
+# Strategy #2: Use most commonly used domain
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  export ROUTE_DOMAIN=$(cf routes | tail -n +2 | grep -E '[a-z0-9]\.' | awk '{print $3}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+  defaulted_domain=1
+fi
+# Strategy #3: Use a domain available to the user
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
+  defaulted_domain=1
+fi
+
+if (( ${defaulted_domain} )); then
+  echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
+fi
+
 # debug info
 which cf
 cf --version
