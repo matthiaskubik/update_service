@@ -104,7 +104,7 @@ fi
 
 # At this point if original_grp is not set, we didn't find any routed apps; ie, is initial deploy
 
-if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
+if [[ 1 = ${#originals[@]} ]] || [[ -z ${original_grp} ]] || [[ "${original_grp}" == "${NAME}" ]]; then
   echo "Initial version"
   exit 0
 else
