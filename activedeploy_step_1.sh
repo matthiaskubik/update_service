@@ -207,7 +207,19 @@ if [[ -n "${original_grp}" ]]; then
     2) # rolled back
     # delete; return ERROR
     echo "Rolled back, Deleting update record."
-    delete $update
+    # Cleanup - delete older updates
+    clean && clean_rc=$? || clean_rc=$?
+    if (( $clean_rc )); then
+      echo "WARN: Unable to delete old versions."
+      echo $(wait_comment $clean_rc)
+    fi
+    # Cleanup - delete update record
+    echo "Deleting upate record"
+    delete $update && delete_rc=$? || delete_rc=$?
+    if (( $delete_rc )); then
+      echo "WARN: Unable to delete update record ${update_id}"
+    fi
+    #delete $update
     exit 2
     ;;
     3) # failed
@@ -224,14 +236,38 @@ if [[ -n "${original_grp}" ]]; then
     #rollback; delete; return ERROR
     echo "Unknown status or phase"
     rollback $update
-    delete $update
+    # Cleanup - delete older updates
+    clean && clean_rc=$? || clean_rc=$?
+    if (( $clean_rc )); then
+      echo "WARN: Unable to delete old versions."
+      echo $(wait_comment $clean_rc)
+    fi
+    # Cleanup - delete update record
+    echo "Deleting upate record"
+    delete $update && delete_rc=$? || delete_rc=$?
+    if (( $delete_rc )); then
+      echo "WARN: Unable to delete update record ${update_id}"
+    fi
+    #delete $update
     exit 5
     ;;
     9) # takes too long
     #rollback; delete; return ERROR
     echo "Timeout"
     rollback $update
-    delete $update
+    # Cleanup - delete older updates
+    clean && clean_rc=$? || clean_rc=$?
+    if (( $clean_rc )); then
+      echo "WARN: Unable to delete old versions."
+      echo $(wait_comment $clean_rc)
+    fi
+    # Cleanup - delete update record
+    echo "Deleting upate record"
+    delete $update && delete_rc=$? || delete_rc=$?
+    if (( $delete_rc )); then
+      echo "WARN: Unable to delete update record ${update_id}"
+    fi
+    #delete $update
     exit 9
     ;;
     *)
