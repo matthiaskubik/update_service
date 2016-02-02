@@ -49,37 +49,8 @@ if [[ -z ${NAME} ]]; then
   exit 1
 fi
 
-# Set default for ROUTE_HOSTNAME
-if [[ -z ${ROUTE_HOSTNAME} ]]; then
-  export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
-fi
-
-# Set default for ROUTE_DOMAIN
-defaulted_domain=0
-# Strategy #1: Use the domain for the app with the same ROUTE_HOSTNAME as we are using
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf routes | awk -v hostname="${ROUTE_HOSTNAME}" '$2 == hostname {print $3}')
-  defaulted_domain=1
-fi
-# Strategy #2: Use most commonly used domain
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf routes | tail -n +2 | grep -E '[a-z0-9]\.' | awk '{print $3}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
-  defaulted_domain=1
-fi
-# Strategy #3: Use a domain available to the user
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
-  defaulted_domain=1
-fi
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  echo "Route domain not specified by environment variable ROUTE_DOMAIN and no suitable alternative could be identified"
-  exit 1
-fi
-
-if (( ${defaulted_domain} )); then
-  echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
-fi
+# Set default (1) for CONCURRENT_VERSIONS
+if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
 # Debug info about cf cli and active-deploy plugins
 which cf
@@ -89,43 +60,23 @@ active_deploy service-info
 # Initial deploy case
 originals=($(groupList))
 
-route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}"
-ROUTED=($(getRouted "${route}" "${originals[@]}"))
-echo ${#ROUTED[@]} of original groups routed to ${route}: ${ROUTED[@]}
-
-# If more than one routed app, select only the oldest
-if (( 1 < ${#ROUTED[@]} )); then
-  echo "WARNING: More than one app routed to ${route}; updating the oldest"
-fi
-
-if (( 0 < ${#ROUTED[@]} )); then
-  original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
-fi
-
-# At this point if original_grp is not set, we didn't find any routed apps; ie, is initial deploy
-
-if [[ 1 = ${#originals[@]} ]] || [[ -z ${original_grp} ]] || [[ "${original_grp}" == "${NAME}" ]]; then
-  echo "Initial version"
+if [[ 1 = ${#originals[@]} ]]; then
+  echo "INFO: Initial version (single version deployed); exiting"
   exit 0
-else
-  echo "Not initial version"
 fi
-
-# Validate needed inputs or set defaults
-# if CONCURRENT_VERSIONS not set assume default of 1 (keep just the latest deployed version)
-if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}"
 in_prog=$(active_deploy list | grep "${NAME}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
-echo "========> id in progress: ${update_id}"
 if [[ -z "${update_id}" ]]; then
-  echo "ERROR: Unable to identify an active update in progress for successor ${NAME}"
+  echo "INFO: Initial version (no update containing ${NAME}); exiting"
   active_deploy list
-  exit 5
+  exit 0
 fi
+
+echo "INFO: Not initial version (part of update ${update_id})"
 active_deploy show ${update_id}
 
 IFS=$'\n' properties=($(active_deploy show ${update_id} | grep ':'))
