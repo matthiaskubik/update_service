@@ -21,41 +21,88 @@
 # Return list of names of existing versions
 # Usage: groupList
 function groupList() {
-  # cf apps | awk -v pattern="${NAME}_[0-9]\*" '$1 ~ pattern {print $1}'
-  cf apps | grep "^${NAME}_[0-9]*[[:space:]]" | cut -d' ' -f1
-  ## TODO error checking on result of cf apps call
+python - <<CODE
+import ccs
+import os
+import sys
+s = ccs.ContainerCloudService()
+groups = s.list_groups()
+names = [g.get('Name', '') for g in groups]
+print('{}'.format(' '.join(names)))
+CODE
 }
 
 
 # Delete a group
 # Usage groupDelete name
 function groupDelete() {
-  local __name="${1}"
-  
-  ice group rm --force ${__name} 
-  ## wait for delete to complete?
+__name="${1}" python - <<CODE
+import ccs
+import os
+import sys
+s = ccs.ContainerCloudService()
+name = os.getenv('__name')
+deleted, group, reason = s.forced_delete_group(name, timeout=90)
+if not deleted:
+  sys.stderr.write('Delete failed: {}\n'.format(reason))
+sys.exit(0 if deleted else 1)
+CODE
 }
 
 
 # Map a route to a group
 # Usage: mapRoute name domain host
 function mapRoute() {
-  local __name="${1}"
-  local __domain="${2}"
-  local __host="${3}"
-  
-  ice route map --hostname ${__host} --domain ${__domain} ${__name} && rc=$? || rc=$?
-  return ${rc}
+__name="${1}" __domain="${2}" __host="${3}" python - <<CODE
+import ccs
+import os
+import sys
+s = ccs.ContainerCloudService()
+name = os.getenv('__name')
+domain = os.getenv('__domain')
+hostname = os.getenv('__host')
+mapped, group, reason = s.map(hostname, domain, name, timeout=90)
+if not mapped:
+  sys.stderr.write('Map of route to group failed: {}\n'.format(reason))
+sys.exit(0 if mapped else 1)
+CODE
 }
 
 
 # Change number of instances in a group
 # Usage: scaleGroup name size
 function scaleGroup() {
-  local __name="${1}"
-  local __size=${2}
-  
-  #TODO: ice group update --max ${__size} ${__name} && rc=$? || rc=$?
-  ice group update --desired ${__size} ${__name} && rc=$? || rc=$?
-  return ${rc}
+__name="${1}" __size="${2}" python - <<CODE
+import ccs
+import os
+import sys
+s = ccs.ContainerCloudService()
+name = os.getenv('__name')
+size = os.getenv('__size')
+scaled, group, reason = s.resize(name, size, timeout=90)
+if not scaled:
+  sys.stderr.write('Group resize failed: {}\n'.format(reason))
+sys.exit(0 if scaled else 1)
+CODE
 }
+
+
+# Get the routes mapped to a group
+# Usage: getRoutes name
+function getRoutes() {
+__name="${1}" python - <<CODE
+import ccs
+import os
+import sys
+s = ccs.ContainerCloudService()
+name = os.getenv('__name')
+group, reason = s.inspect_group(name, timeout=30)
+if group is None:
+  sys.stderr.write('Can't read group: {}\n'.format(reason))
+  sys.exit(1)
+else:
+  routes = group.get('Routes', [])
+  print('{}'.format(' '.join(routes)))
+CODE
+}
+
