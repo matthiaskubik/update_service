@@ -117,7 +117,7 @@ successor="${NAME}"
 export UPDATE_ID=${BUILD_NUMBER}
 
 # Determine which original groups has the desired route --> the current original
-local route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
+route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
 ROUTED=($(getRouted "${route}" "${originals[@]}"))
 echo ${#ROUTED[@]} of original groups routed to ${route}: ${ROUTED[@]}
 
