@@ -34,10 +34,12 @@ source ${EXT_DIR}/../utilities/logging_utils.sh
 
 # Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
 if [[ -z ${TARGET_PLATFORM} ]]; then
-  log_and_echo "$ERROR" "ERROR: Target platform not specified"
+  echo "ERROR: Target platform not specified"
   exit 1
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
+
+log_and_echo "$INFO" "Sourced ${TARGET_PLATFORM}.sh"
 
 # Identify NAME if not set from other likely variables
 if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
