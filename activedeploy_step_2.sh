@@ -49,6 +49,15 @@ if [[ -z ${NAME} ]]; then
   exit 1
 fi
 
+# Verify that AD_ENDPOINT is available (otherwise unset it)
+if [[ -n "${AD_ENDPOINT}" ]]; then
+  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check | grep status | grep up)
+  if [[ -z "${up}" ]]; then
+    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
+    export AD_ENDPOINT=
+  fi
+fi
+
 # Set default (1) for CONCURRENT_VERSIONS
 if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
