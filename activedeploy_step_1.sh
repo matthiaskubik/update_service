@@ -118,7 +118,7 @@ export UPDATE_ID=${BUILD_NUMBER}
 
 # Determine which original groups has the desired route --> the current original
 local route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
-ROUTED=($(getRoutedApps "${route}" "${originals[@]}"))
+ROUTED=($(getRouted "${route}" "${originals[@]}"))
 echo ${#ROUTED[@]} of original groups routed to ${route}: ${ROUTED[@]}
 
 # If more than one routed app, select only the oldest
