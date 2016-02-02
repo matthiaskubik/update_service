@@ -27,10 +27,14 @@ echo $PATH
 
 # Pull in common methods
 source ${SCRIPTDIR}/activedeploy_common.sh
+# TODO: modify extensions to do this in activedeploy_*/_init.sh instead of activedeploy_common/init.sh
+# TODO: remove from here
+source ${EXT_DIR}/../utilities/ice_utils.sh
+source ${EXT_DIR}/../utilities/logging_utils.sh
 
 # Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
 if [[ -z ${TARGET_PLATFORM} ]]; then
-  echo "ERROR: Target platform not specified"
+  log_and_echo "$ERROR" "ERROR: Target platform not specified"
   exit 1
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
