@@ -19,7 +19,6 @@
 # Usage: groupList
 function groupList() {
   PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  # cf apps | awk -v pattern="${PATTERN}_[0-9]\*" '$1 ~ pattern {print $1}'
   cf apps | grep "^${PATTERN}_[0-9]*[[:space:]]" | cut -d' ' -f1
   ## TODO error checking on result of cf apps call
 }
@@ -54,3 +53,13 @@ function scaleGroup() {
   cf scale ${__name} -i ${__size} && rc=$? || rc=$?
   return ${rc}
 }
+
+# Get the routes mapped to a group
+# Usage: getRoutes name
+function getRoutes() {
+  local __name="${1}"
+
+  IFS=',' read -a routes <<< $(cf app ${__name} | grep "^urls: " | sed 's/urls: //' | sed 's/ //g')
+  echo "${routes[@]}"
+}
+

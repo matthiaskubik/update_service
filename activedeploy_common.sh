@@ -292,3 +292,30 @@ function clean() {
     fi
   done
 }
+
+# Retrieve a list of apps/groups to which a specific route is mapped
+# Usage: getRouted route candidate_apps
+function getRouted() {
+  local __route="${1}"; shift
+  local __apps=("$@")
+
+  >&2 echo "Looking for application with route ${__route} among ${__apps[@]}"
+
+  local __routed_apps=()
+  for app in "${__apps[@]}"; do
+    # >&2 echo "Considering app: $app"
+    app_routes=($(getRoutes ${app}))
+    # >&2 echo "Routes for $app are: ${app_routes[@]}"
+    for rt in ${app_routes[@]}; do
+      if [[ "${rt}" == "${__route}" ]]; then
+        # >&2 echo "FOUND app: ${app}"
+        __routed_apps+=(${app})
+        break
+      fi
+    done
+  done
+
+  >&2 echo "${__route} is routed to ${__routed_apps[@]}"
+  echo "${__routed_apps[@]}"
+}
+

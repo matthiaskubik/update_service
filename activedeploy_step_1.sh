@@ -15,10 +15,10 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
+set -x
+
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-set -x
-find . -print
 echo "EXT_DIR=$EXT_DIR"
 if [[ -f $EXT_DIR/common/cf ]]; then
   PATH=$EXT_DIR/common:$PATH
@@ -34,42 +34,6 @@ if [[ -z ${TARGET_PLATFORM} ]]; then
   exit 1
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
-
-###################################################################################
-
-#EE# acting funny, fix later
-function find_route(){
-  local __originals=()
-  read -a __originals <<< $(echo ${@})
-  echo ${#__originals[@]}
-  local __routed=()
-  
-  oldIFS=$IFS
-  IFS=': ,'
-  for i in "${__originals[@]}"
-  do   
-     echo "Checking routes for ${i}:"
-     read -a route_list <<< $(cf app ${i} | grep -v "^Showing" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep "^urls:")
-     #echo $'${route_list[@]:1}\n'
-   
-     if (( 1 < ${#route_list[@]} )); then
-       for j in "${route_list[@]}"
-	   do
-	      if [[ "${j}" == "${route}" ]]; then
-		    __routed+=("${i}")
-		    break
-		  fi
-	   done
-     fi  
-     unset route_list
-     echo ${__routed}
-  done
-  IFS=$oldIFS
-  
-  echo ${__routed}
-}
-
-###################################################################################
 
 # Identify NAME if not set from other likely variables
 if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
@@ -132,9 +96,22 @@ if [[ -z ${ROUTE_DOMAIN} ]]; then
   export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
   defaulted_domain=1
 fi
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  echo "Route domain not specified by environment variable ROUTE_DOMAIN and no suitable alternative could be identified"
+  exit 1
+fi
 
 if (( ${defaulted_domain} )); then
   echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
+fi
+
+# Verify that AD_ENDPOINT is available (otherwise unset it)
+if [[ -n "${AD_ENDPOINT}" ]]; then
+  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
+  if [[ -z "${up}" ]]; then
+    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
+    export AD_ENDPOINT=
+  fi
 fi
 
 # debug info
@@ -149,41 +126,21 @@ successor="${NAME}"
 export UPDATE_ID=${BUILD_NUMBER}
 
 # Determine which original groups has the desired route --> the current original
-export route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
-ROUTED=()
-
-#EE# TODO: make this a function
-oldIFS=$IFS
-IFS=': ,'
-for i in "${originals[@]}"
-do   
-   echo "Checking routes for ${i}:"
-   read -a route_list <<< $(cf app ${i} | grep -v "^Showing" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep -v "^name" | grep "^urls:")
-   #echo $'${route_list[@]:1}\n'
-   
-   if (( 1 < ${#route_list[@]} )); then
-     for j in "${route_list[@]}"
-	 do
-	    if [[ "${j}" == "${route}" ]]; then
-		  ROUTED+=(${i})
-		  break
-		fi
-	 done
-   fi  
-   unset route_list
-done
-IFS=$oldIFS
-
+route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
+ROUTED=($(getRouted "${route}" "${originals[@]}"))
 echo ${#ROUTED[@]} of original groups routed to ${route}: ${ROUTED[@]}
 
+# If more than one routed app, select only the oldest
 if (( 1 < ${#ROUTED[@]} )); then
-  echo "WARNING: Selecting only oldest to reroute"
+  echo "WARNING: More than one app routed to ${route}; updating the oldest"
 fi
 
 if (( 0 < ${#ROUTED[@]} )); then
   original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
   original_grp_id=${original_grp#_*}
 fi
+
+# At this point if original_grp is not set, we didn't find any routed apps; ie, is initial deploy
 
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then

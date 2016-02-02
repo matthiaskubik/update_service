@@ -15,9 +15,15 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
+set -x # trace steps
+
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-set -x # trace steps
+echo "EXT_DIR=$EXT_DIR"
+if [[ -f $EXT_DIR/common/cf ]]; then
+  PATH=$EXT_DIR/common:$PATH
+fi
+echo $PATH
 
 # Pull in common methods
 source "${SCRIPTDIR}/activedeploy_common.sh"
@@ -43,34 +49,17 @@ if [[ -z ${NAME} ]]; then
   exit 1
 fi
 
-###################################################################################
-# function clean() {
+# Verify that AD_ENDPOINT is available (otherwise unset it)
+if [[ -n "${AD_ENDPOINT}" ]]; then
+  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
+  if [[ -z "${up}" ]]; then
+    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
+    export AD_ENDPOINT=
+  fi
+fi
 
-  # # Identify list of build numbers to keep
-  # PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  # VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
-  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
-  # done
-
-  # local NAME_ARRAY=($(groupList))
-
-  # for name in ${NAME_ARRAY[@]}; do
-    # version=$(echo "${name}" | sed 's#.*_##g')
-    # echo "Considering ${name} with version ${version}"
-    # if (( ${version} > ${VERSION} )); then
-      # echo "${name} has a version (${version}) greater than the current version (${VERSION})."
-      # echo "It will not be removed."
-    # elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
-      # echo "${name} will not be deleted"
-    # else # delete it
-      # echo "Removing ${name}"
-      # groupDelete "${name}"
-    # fi
-  # done
-# }
-
-###################################################################################
+# Set default (1) for CONCURRENT_VERSIONS
+if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 
 # Debug info about cf cli and active-deploy plugins
 which cf
@@ -79,28 +68,24 @@ active_deploy service-info
 
 # Initial deploy case
 originals=($(groupList))
-if [[ 1 = ${#originals[@]} ]]; then
-  echo "Initial version"
-  exit 0
-else
-  echo "Not initial version"
-fi
 
-# Validate needed inputs or set defaults
-# if CONCURRENT_VERSIONS not set assume default of 1 (keep just the latest deployed version)
-if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
+if [[ 1 = ${#originals[@]} ]]; then
+  echo "INFO: Initial version (single version deployed); exiting"
+  exit 0
+fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}"
 in_prog=$(active_deploy list | grep "${NAME}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
-echo "========> id in progress: ${update_id}"
 if [[ -z "${update_id}" ]]; then
-  echo "ERROR: Unable to identify an active update in progress for successor ${NAME}"
+  echo "INFO: Initial version (no update containing ${NAME}); exiting"
   active_deploy list
-  exit 5
+  exit 0
 fi
+
+echo "INFO: Not initial version (part of update ${update_id})"
 active_deploy show ${update_id}
 
 IFS=$'\n' properties=($(active_deploy show ${update_id} | grep ':'))
