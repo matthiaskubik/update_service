@@ -131,7 +131,7 @@ if (( 0 < ${#ROUTED[@]} )); then
   original_grp_id=${original_grp#_*}
 fi
 
-# At this point if original_grp is not set, we didn't find any routed apps
+# At this point if original_grp is not set, we didn't find any routed apps; ie, is initial deploy
 
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then

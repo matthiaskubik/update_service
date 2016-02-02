@@ -49,34 +49,37 @@ if [[ -z ${NAME} ]]; then
   exit 1
 fi
 
-###################################################################################
-# function clean() {
+# Set default for ROUTE_HOSTNAME
+if [[ -z ${ROUTE_HOSTNAME} ]]; then
+  export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
+fi
 
-  # # Identify list of build numbers to keep
-  # PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  # VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
-  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
-  # done
+# Set default for ROUTE_DOMAIN
+defaulted_domain=0
+# Strategy #1: Use the domain for the app with the same ROUTE_HOSTNAME as we are using
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  export ROUTE_DOMAIN=$(cf routes | awk -v hostname="${ROUTE_HOSTNAME}" '$2 == hostname {print $3}')
+  defaulted_domain=1
+fi
+# Strategy #2: Use most commonly used domain
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  export ROUTE_DOMAIN=$(cf routes | tail -n +2 | grep -E '[a-z0-9]\.' | awk '{print $3}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+  defaulted_domain=1
+fi
+# Strategy #3: Use a domain available to the user
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
+  defaulted_domain=1
+fi
+if [[ -z ${ROUTE_DOMAIN} ]]; then
+  echo "Route domain not specified by environment variable ROUTE_DOMAIN and no suitable alternative could be identified"
+  exit 1
+fi
 
-  # local NAME_ARRAY=($(groupList))
-
-  # for name in ${NAME_ARRAY[@]}; do
-    # version=$(echo "${name}" | sed 's#.*_##g')
-    # echo "Considering ${name} with version ${version}"
-    # if (( ${version} > ${VERSION} )); then
-      # echo "${name} has a version (${version}) greater than the current version (${VERSION})."
-      # echo "It will not be removed."
-    # elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
-      # echo "${name} will not be deleted"
-    # else # delete it
-      # echo "Removing ${name}"
-      # groupDelete "${name}"
-    # fi
-  # done
-# }
-
-###################################################################################
+if (( ${defaulted_domain} )); then
+  echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
+fi
 
 # Debug info about cf cli and active-deploy plugins
 which cf
@@ -85,7 +88,23 @@ active_deploy service-info
 
 # Initial deploy case
 originals=($(groupList))
-if [[ 1 = ${#originals[@]} ]]; then
+
+route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}"
+ROUTED=($(getRouted "${route}" "${originals[@]}"))
+echo ${#ROUTED[@]} of original groups routed to ${route}: ${ROUTED[@]}
+
+# If more than one routed app, select only the oldest
+if (( 1 < ${#ROUTED[@]} )); then
+  echo "WARNING: More than one app routed to ${route}; updating the oldest"
+fi
+
+if (( 0 < ${#ROUTED[@]} )); then
+  original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
+fi
+
+# At this point if original_grp is not set, we didn't find any routed apps; ie, is initial deploy
+
+if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
   echo "Initial version"
   exit 0
 else
