@@ -35,42 +35,6 @@ if [[ -z ${TARGET_PLATFORM} ]]; then
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 
-###################################################################################
-
-#EE# acting funny, fix later
-function find_route(){
-  local __originals=()
-  read -a __originals <<< $(echo ${@})
-  echo ${#__originals[@]}
-  local __routed=()
-  
-  oldIFS=$IFS
-  IFS=': ,'
-  for i in "${__originals[@]}"
-  do   
-     echo "Checking routes for ${i}:"
-     read -a route_list <<< $(cf app ${i} | grep -v "^Showing" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep "^urls:")
-     #echo $'${route_list[@]:1}\n'
-   
-     if (( 1 < ${#route_list[@]} )); then
-       for j in "${route_list[@]}"
-	   do
-	      if [[ "${j}" == "${route}" ]]; then
-		    __routed+=("${i}")
-		    break
-		  fi
-	   done
-     fi  
-     unset route_list
-     echo ${__routed}
-  done
-  IFS=$oldIFS
-  
-  echo ${__routed}
-}
-
-###################################################################################
-
 # Identify NAME if not set from other likely variables
 if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
   export NAME="${CF_APP_NAME}"
@@ -153,41 +117,21 @@ successor="${NAME}"
 export UPDATE_ID=${BUILD_NUMBER}
 
 # Determine which original groups has the desired route --> the current original
-export route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
-ROUTED=()
-
-#EE# TODO: make this a function
-oldIFS=$IFS
-IFS=': ,'
-for i in "${originals[@]}"
-do   
-   echo "Checking routes for ${i}:"
-   read -a route_list <<< $(cf app ${i} | grep -v "^Showing" | grep -v "^OK" | grep -v "^[[:space:]]*$" | grep -v "^name" | grep "^urls:")
-   #echo $'${route_list[@]:1}\n'
-   
-   if (( 1 < ${#route_list[@]} )); then
-     for j in "${route_list[@]}"
-	 do
-	    if [[ "${j}" == "${route}" ]]; then
-		  ROUTED+=(${i})
-		  break
-		fi
-	 done
-   fi  
-   unset route_list
-done
-IFS=$oldIFS
-
+local route="${ROUTE_HOSTNAME}.${ROUTE_DOMAIN}" 
+ROUTED=($(getRoutedApps "${route}" "${originals[@]}"))
 echo ${#ROUTED[@]} of original groups routed to ${route}: ${ROUTED[@]}
 
+# If more than one routed app, select only the oldest
 if (( 1 < ${#ROUTED[@]} )); then
-  echo "WARNING: Selecting only oldest to reroute"
+  echo "WARNING: More than one app routed to ${route}; updating the oldest"
 fi
 
 if (( 0 < ${#ROUTED[@]} )); then
   original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
   original_grp_id=${original_grp#_*}
 fi
+
+# At this point if original_grp is not set, we didn't find any routed apps
 
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
