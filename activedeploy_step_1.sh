@@ -105,6 +105,15 @@ if (( ${defaulted_domain} )); then
   echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
 fi
 
+# Verify that AD_ENDPOINT is available (otherwise unset it)
+if [[ -n "${AD_ENDPOINT}" ]]; then
+  up=$(timeout 10 curl ${AD_ENDPOINT}/health_check | grep status | grep up)
+  if [[ -z "${up}" ]]; then
+    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
+    export AD_ENDPOINT=
+  fi
+fi
+
 # debug info
 which cf
 cf --version
