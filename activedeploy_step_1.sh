@@ -15,10 +15,10 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
+set -x
+
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-set -x
-find . -print
 echo "EXT_DIR=$EXT_DIR"
 if [[ -f $EXT_DIR/common/cf ]]; then
   PATH=$EXT_DIR/common:$PATH
