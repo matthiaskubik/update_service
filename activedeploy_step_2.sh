@@ -51,7 +51,7 @@ fi
 
 # Verify that AD_ENDPOINT is available (otherwise unset it)
 if [[ -n "${AD_ENDPOINT}" ]]; then
-  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check | grep status | grep up)
+  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
   if [[ -z "${up}" ]]; then
     echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
     export AD_ENDPOINT=
