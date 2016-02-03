@@ -153,6 +153,7 @@ fi
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
   echo "INFO: Initial version, scaling"
+  ls -l
   scaleGroup ${successor} ${GROUP_SIZE} && rc=$? || rc=$?
   if (( ${rc} )); then
     echo "ERROR: Failed to scale ${successor} to ${GROUP_SIZE} instances"
