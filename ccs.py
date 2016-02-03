@@ -46,7 +46,9 @@ def sanitize_message(message):
 class CloudFoundaryService:
     
     def __init__(self, base_url = 'https://api.ng.bluemix.net'):
-        self._config = json.loads(open(os.path.join(os.getenv('HOME', '~'), '.cf', 'config.json')).read())
+        config_path = os.path.join(os.getenv('HOME', '~'), '.cf', 'config.json')
+        sys.stderr.write('config.json path: {}\n'.format(config_path))
+        self._config = json.loads(open(config_path)).read())
     
     def space_guid(self):
         return self._config['SpaceFields']['Guid']
