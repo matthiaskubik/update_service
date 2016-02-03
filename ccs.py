@@ -794,7 +794,7 @@ class ContainerCloudService:
         if not group:
             # group does not exist
             logging.getLogger(__name__).debug("Group '{name}' does not exist; exiting".format(name=name))
-            return False, None, "Cannot resize group, no group with {name} exists.".format(name=name)
+            return False, None, "Cannot resize group, no group named {name} exists.".format(name=name)
         
         # make initial call
         logging.getLogger(__name__).debug("Attempting to resize group '{name}' to size {size}".format(name=name, size=desired))
