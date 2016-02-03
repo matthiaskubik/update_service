@@ -220,11 +220,11 @@ if [[ -n "${original_grp}" ]]; then
     # delete; return ERROR
     echo "Rolled back, Deleting update record."
     # Cleanup - delete older updates
-    clean && clean_rc=$? || clean_rc=$?
-    if (( $clean_rc )); then
-      echo "WARN: Unable to delete old versions."
-      echo $(wait_comment $clean_rc)
-    fi
+    # clean && clean_rc=$? || clean_rc=$?
+    # if (( $clean_rc )); then
+      # echo "WARN: Unable to delete old versions."
+      # echo $(wait_comment $clean_rc)
+    # fi
     # Cleanup - delete update record
     echo "Deleting upate record"
     delete $update && delete_rc=$? || delete_rc=$?
