@@ -108,10 +108,12 @@ function rollback() {
 function delete() {
   __update_id="${1}"
   
-  echo "Deleting update ${__update_id}"
-  active_deploy show ${__update_id}
+  # Keep records for now
+  echo "Not deleting update ${__update_id}"
+  # echo "Deleting update ${__update_id}"
+  # active_deploy show ${__update_id}
 
-  active_deploy delete ${__update_id} --force
+  # active_deploy delete ${__update_id} --force
 }
 
 # Convert expression of the form HhMmSs to an integer representing seconds
