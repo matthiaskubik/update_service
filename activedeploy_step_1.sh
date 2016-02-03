@@ -27,6 +27,12 @@ echo $PATH
 
 # Pull in common methods
 source ${SCRIPTDIR}/activedeploy_common.sh
+# TODO: modify extensions to do this in activedeploy_*/_init.sh instead of activedeploy_common/init.sh
+# TODO: remove from here
+source ${EXT_DIR}/common/utilities/logging_utils.sh
+
+# cd to target so can read ccs.py when needed
+cd ${SCRIPTDIR}
 
 # Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
 if [[ -z ${TARGET_PLATFORM} ]]; then
@@ -34,6 +40,8 @@ if [[ -z ${TARGET_PLATFORM} ]]; then
   exit 1
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
+
+log_and_echo "$INFO" "Sourced ${TARGET_PLATFORM}.sh"
 
 # Identify NAME if not set from other likely variables
 if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
@@ -145,6 +153,7 @@ fi
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
   echo "INFO: Initial version, scaling"
+  ls -l
   scaleGroup ${successor} ${GROUP_SIZE} && rc=$? || rc=$?
   if (( ${rc} )); then
     echo "ERROR: Failed to scale ${successor} to ${GROUP_SIZE} instances"
