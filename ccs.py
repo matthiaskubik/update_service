@@ -24,10 +24,10 @@ def sanitize_headers(h):
     if 'Authorization' not in h and 'X-Auth-Token' not in h:
         return h
     hc = h.copy()
-    if 'Authorization' in hc:
-        hc['Authorization'] = '[PRIVATE DATA HIDDEN]'
-    if 'X-Auth-Token' in hc:
-        hc['X-Auth-Token'] = '[PRIVATE DATA HIDDEN]'
+#    if 'Authorization' in hc:
+#        hc['Authorization'] = '[PRIVATE DATA HIDDEN]'
+#    if 'X-Auth-Token' in hc:
+#        hc['X-Auth-Token'] = '[PRIVATE DATA HIDDEN]'
     return hc
     
 def sanitize_message(message):
