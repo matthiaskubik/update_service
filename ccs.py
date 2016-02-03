@@ -140,7 +140,7 @@ class ActiveDeployService:
         
     def __token(self):
         t = self._cf.auth_token()
-        return 'bearer {}' if not t.startswith('bearer ') else t
+        return 'bearer {}' if not t.lower().startswith('bearer ') else t
 
 
 
@@ -285,7 +285,7 @@ class ContainerCloudService:
             @rtype string: the Bluemix token without the string "bearer " at the front
         '''
         t = self._cfapi.auth_token()
-        return t[7:] if t.startswith('bearer ') else t
+        return t[7:] if t.lower().startswith('bearer ') else t
     
     #
     # Methods that do basic ccs actions
