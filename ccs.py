@@ -831,7 +831,7 @@ if __name__ == '__main__':
 
         return success, group, reason
 
-    logger = logging.getLogger('')
+    logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
