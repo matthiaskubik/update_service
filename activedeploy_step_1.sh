@@ -122,6 +122,9 @@ if [[ -n "${AD_ENDPOINT}" ]]; then
   fi
 fi
 
+# Set default (1) for CONCURRENT_VERSIONS
+if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
+
 # debug info
 which cf
 cf --version
