@@ -130,6 +130,8 @@ which cf
 cf --version
 active_deploy service-info
 
+ice -v group list
+
 originals=($(groupList))
 successor="${NAME}"
 
