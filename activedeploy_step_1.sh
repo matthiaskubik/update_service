@@ -23,6 +23,9 @@ echo "EXT_DIR=$EXT_DIR"
 if [[ -f $EXT_DIR/common/cf ]]; then
   PATH=$EXT_DIR/common:$PATH
 fi
+if [[ -d /home/pipeline/.local/bin ]]; then
+  PATH=$PATH:/home/pipeline/.local/bin
+fi
 echo $PATH
 
 # Pull in common methods
