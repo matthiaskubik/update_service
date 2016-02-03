@@ -154,6 +154,16 @@ class ContainerCloudService:
         self._cfapi = cfapi if cfapi else CloudFoundaryService()
         self._base_url = base_url
 
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        handler1 = logging.StreamHandler(sys.stderr)
+        handler1.setLevel(logging.DEBUG)
+        handler1.setFormatter(formatter)
+        logger.addHandler(handler1)
+
+
 
     #
     # Methods to do basic (REST) operations on container service. These methods log the request and response (in case of error)
@@ -173,7 +183,8 @@ class ContainerCloudService:
             'X-Auth-Token': self.__token(),
             'X-Auth-Project-Id': self._cfapi.space_guid()
         }
-        logging.getLogger(__name__).debug("[{timeout}] curl {headers} -X GET '{url}'".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
+        #logging.getLogger(__name__).debug("[{timeout}] curl {headers} -X GET '{url}'".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
+        sys.stderr.write("[{timeout}] curl {headers} -X GET '{url}'\n".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
                                                                           url=url,
                                                                           timeout=timeout))
         retval = requests.get(url, headers=headers, timeout=timeout)
@@ -831,7 +842,7 @@ if __name__ == '__main__':
 
         return success, group, reason
 
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 

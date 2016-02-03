@@ -26,7 +26,7 @@ import ccs
 import os
 import sys
 s = ccs.ContainerCloudService()
-groups = s.list_groups()
+groups = s.list_groups(timeout=30)
 names = [g.get('Name', '') for g in groups]
 print('{}'.format(' '.join(names)))
 CODE
