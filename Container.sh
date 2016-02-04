@@ -26,7 +26,7 @@ import ccs
 import os
 import sys
 s = ccs.ContainerCloudService()
-groups = s.list_groups()
+groups = s.list_groups(timeout=30)
 names = [g.get('Name', '') for g in groups]
 print('{}'.format(' '.join(names)))
 CODE
@@ -98,7 +98,7 @@ s = ccs.ContainerCloudService()
 name = os.getenv('__name')
 group, reason = s.inspect_group(name, timeout=30)
 if group is None:
-  sys.stderr.write('Can't read group: {}\n'.format(reason))
+  sys.stderr.write("Can't read group: {}\n".format(reason))
   sys.exit(1)
 else:
   routes = group.get('Routes', [])

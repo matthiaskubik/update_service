@@ -138,7 +138,7 @@ class ActiveDeployService:
         
     def __token(self):
         t = self._cf.auth_token()
-        return 'bearer {}' if not t.startswith('bearer ') else t
+        return 'bearer {}' if not t.lower().startswith('bearer ') else t
 
 
 
@@ -153,6 +153,16 @@ class ContainerCloudService:
         '''
         self._cfapi = cfapi if cfapi else CloudFoundaryService()
         self._base_url = base_url
+
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        handler1 = logging.StreamHandler(sys.stderr)
+        handler1.setLevel(logging.DEBUG)
+        handler1.setFormatter(formatter)
+        logger.addHandler(handler1)
+
 
 
     #
@@ -272,7 +282,7 @@ class ContainerCloudService:
             @rtype string: the Bluemix token without the string "bearer " at the front
         '''
         t = self._cfapi.auth_token()
-        return t[7:] if t.startswith('bearer ') else t
+        return t[7:] if t.lower().startswith('bearer ') else t
     
     #
     # Methods that do basic ccs actions
@@ -794,7 +804,7 @@ class ContainerCloudService:
         if not group:
             # group does not exist
             logging.getLogger(__name__).debug("Group '{name}' does not exist; exiting".format(name=name))
-            return False, None, "Cannot resize group, no group named {name} exists.".format(name=name)
+            return False, None, "Cannot resize group, no group named {name} exists. ({reason})".format(name=name, reason=reason)
         
         # make initial call
         logging.getLogger(__name__).debug("Attempting to resize group '{name}' to size {size}".format(name=name, size=desired))
@@ -835,7 +845,7 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    handler1 = logging.StreamHandler()
+    handler1 = logging.StreamHandler(sys.stderr)
     handler1.setLevel(logging.DEBUG)
     handler1.setFormatter(formatter)
     logger.addHandler(handler1)
