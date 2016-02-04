@@ -59,7 +59,7 @@ if [[ -n "${AD_ENDPOINT}" ]]; then
 fi
 
 # Set default (1) for CONCURRENT_VERSIONS
-if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
+if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=2; fi
 
 # Debug info about cf cli and active-deploy plugins
 which cf
