@@ -24,10 +24,10 @@ def sanitize_headers(h):
     if 'Authorization' not in h and 'X-Auth-Token' not in h:
         return h
     hc = h.copy()
-#    if 'Authorization' in hc:
-#        hc['Authorization'] = '[PRIVATE DATA HIDDEN]'
-#    if 'X-Auth-Token' in hc:
-#        hc['X-Auth-Token'] = '[PRIVATE DATA HIDDEN]'
+    if 'Authorization' in hc:
+        hc['Authorization'] = '[PRIVATE DATA HIDDEN]'
+    if 'X-Auth-Token' in hc:
+        hc['X-Auth-Token'] = '[PRIVATE DATA HIDDEN]'
     return hc
     
 def sanitize_message(message):
@@ -46,9 +46,7 @@ def sanitize_message(message):
 class CloudFoundaryService:
     
     def __init__(self, base_url = 'https://api.ng.bluemix.net'):
-        config_path = os.path.join(os.getenv('HOME', '~'), '.cf', 'config.json')
-        sys.stderr.write('config.json path: {}\n'.format(config_path))
-        self._config = json.loads(open(config_path).read())
+        self._config = json.loads(open(os.path.join(os.getenv('HOME', '~'), '.cf', 'config.json')).read())
     
     def space_guid(self):
         return self._config['SpaceFields']['Guid']
@@ -185,8 +183,7 @@ class ContainerCloudService:
             'X-Auth-Token': self.__token(),
             'X-Auth-Project-Id': self._cfapi.space_guid()
         }
-        #logging.getLogger(__name__).debug("[{timeout}] curl {headers} -X GET '{url}'".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
-        sys.stderr.write("[{timeout}] curl {headers} -X GET '{url}'\n".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
+        logging.getLogger(__name__).debug("[{timeout}] curl {headers} -X GET '{url}'".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
                                                                           url=url,
                                                                           timeout=timeout))
         retval = requests.get(url, headers=headers, timeout=timeout)
@@ -844,7 +841,7 @@ if __name__ == '__main__':
 
         return success, group, reason
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 

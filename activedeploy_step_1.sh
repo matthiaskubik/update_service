@@ -23,9 +23,6 @@ echo "EXT_DIR=$EXT_DIR"
 if [[ -f $EXT_DIR/common/cf ]]; then
   PATH=$EXT_DIR/common:$PATH
 fi
-if [[ -d /home/pipeline/.local/bin ]]; then
-  PATH=$PATH:/home/pipeline/.local/bin
-fi
 echo $PATH
 
 # Pull in common methods
@@ -132,8 +129,6 @@ if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=1; fi
 which cf
 cf --version
 active_deploy service-info
-
-ice -v group list
 
 originals=($(groupList))
 successor="${NAME}"
