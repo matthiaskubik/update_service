@@ -173,7 +173,7 @@ function wait_phase_completion() {
 
     case "${update_status}" in
       completed) # whole update is completed
-      return 1
+      return 0
       ;;
       rolled\ back)
       return 2
