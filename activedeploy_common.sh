@@ -109,11 +109,11 @@ function delete() {
   __update_id="${1}"
   
   # Keep records for now
-  # echo "Not deleting update ${__update_id}"
+  echo "Not deleting update ${__update_id}"
   
-  echo "Deleting update ${__update_id}"
-  active_deploy show ${__update_id}
-  active_deploy delete ${__update_id} --force
+  # echo "Deleting update ${__update_id}"
+  # active_deploy show ${__update_id}
+  # active_deploy delete ${__update_id} --force
 }
 
 # Convert expression of the form HhMmSs to an integer representing seconds
@@ -173,7 +173,7 @@ function wait_phase_completion() {
 
     case "${update_status}" in
       completed) # whole update is completed
-      return 1
+      return 0
       ;;
       rolled\ back)
       return 2

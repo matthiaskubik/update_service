@@ -111,15 +111,21 @@ fi
 # Either rampdown and complete (on test success) or rollback (on test failure)
 if [[ ${TEST_RESULT_FOR_AD} -eq 0 ]]; then
   echo "Test success -- completing update ${update_id}"
+  # First advance to rampdown phase
   advance ${update_id}  && rc=$? || rc=$?
   # If failure doing advance, then rollback
   if (( $rc )); then
-    echo "Advance to rampdown failed; rolling back update ${update_id}"
+    echo "ERROR: Advance to rampdown failed; rolling back update ${update_id}"
     rollback ${update_id} || true
     if (( $rollback_rc )); then
       echo "WARN: Unable to rollback update"
       echo $(wait_comment $rollback_rc)
     fi 
+  fi
+  # Second advance to final phase
+  advance ${update_id} && rc=$? || rc=$?
+  if (( $rc )); then
+    echo "ERROR: Unable to advance to final phase"
   fi
 else
   echo "Test failure -- rolling back update ${update_id}"
