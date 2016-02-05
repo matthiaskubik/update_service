@@ -156,7 +156,6 @@ fi
 # map/scale original deployment if necessary
 if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
   echo "INFO: Initial version, scaling"
-  ls -l
   scaleGroup ${successor} ${GROUP_SIZE} && rc=$? || rc=$?
   if (( ${rc} )); then
     echo "ERROR: Failed to scale ${successor} to ${GROUP_SIZE} instances"
@@ -184,7 +183,7 @@ active_deploy list --timeout 60s
 if [[ -n "${original_grp}" ]]; then
   echo "Beginning update with cf active-deploy-create ..."
  
-  create_args="${original_grp} ${successor_grp} --manual --quiet --label Explore_${UPDATE_ID} --timeout 60s"
+  create_args="${original_grp} ${successor_grp} --manual --quiet --timeout 60s"
   
   if [[ -n "${RAMPUP_DURATION}" ]]; then create_args="${create_args} --rampup ${RAMPUP_DURATION}"; fi
   if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_args="${create_args} --rampdown ${RAMPDOWN_DURATION}"; fi
@@ -201,6 +200,13 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Initiated update: ${update}"
   active_deploy show $update --timeout 60s
+
+  # Identify AD UI server
+  ad_server_url=$(active-deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
+  echo "Identified ad_server_url as: ${update_url}"
+  update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
+  update_url="${update_gui_url}/deployments/${update}/?ace_config={%22spaceGuid%22:%22${CF_SPACE}%22}"
+  echo "Identified update_url as: ${update_url}"
   
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
