@@ -224,6 +224,15 @@ if [[ -n "${original_grp}" ]]; then
     ;;
     2) # rolled back
     # delete; return ERROR
+    
+    # stop rolled back app
+    properties=($(cf active-deploy-show $update | grep "successor group: "))
+    str1=${properties[@]}
+    str2=${str1#*": "}
+    app_name=${str2%" app"*}
+    out=$(cf stop ${app_name})
+    echo "${app_name} stopped after rollback"
+    
     echo "Rolled back, Deleting update record."
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
