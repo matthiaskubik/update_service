@@ -144,7 +144,7 @@ if [[ -n "${AD_ENDPOINT}" ]]; then
     echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
     export AD_ENDPOINT=
   else
-    supports_target ${AD_ENDPOINT} ${CF_TARGET_URL}
+    supports_target ${AD_ENDPOINT} 'https://api.stage1.ng.bluemixn.net' #${CF_TARGET_URL}
   fi
 fi
 
