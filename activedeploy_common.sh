@@ -100,6 +100,14 @@ function rollback() {
   active_deploy rollback ${__update_id}
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
   
+  # stop rolled back app
+  properties=($(cf active-deploy-show ${__update_id} | grep "successor group: "))
+  str1=${properties[@]}
+  str2=${str1#*": "}
+  app_name=${str2%" app"*}
+  out=$(cf stop ${app_name})
+  echo "${app_name} stopped after rollback"
+  
   echo "Return code for rollback is ${rc}"
   return ${rc}
 }
@@ -269,14 +277,72 @@ function wait_comment() {
 }
 
 # TODO : write definition
+# function clean() {
+
+  # # Identify list of build numbers to keep
+  # PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  # VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
+  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
+    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
+  # done
+
+  # local NAME_ARRAY=($(groupList))
+
+  # for name in ${NAME_ARRAY[@]}; do
+    # version=$(echo "${name}" | sed 's#.*_##g')
+    # echo "Considering ${name} with version ${version}"
+    # if (( ${version} > ${VERSION} )); then
+      # echo "${name} has a version (${version}) greater than the current version (${VERSION})."
+      # echo "It will not be removed."
+    # elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
+      # echo "${name} will not be deleted"
+    # else # delete it
+      # echo "Removing ${name}"
+      # groupDelete "${name}"
+    # fi
+  # done
+# }
+
+# TODO : write definition
 function clean() {
 
   # Identify list of build numbers to keep
   PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
   VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
-  for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
+  
+  x=0
+  apps=($(groupList))
+
+  # add all not stopped apps to list
+  for a in ${apps[@]}; do
+    started=($(cf app ${a}))
+    #if grep -q "started" ${started[@]}; then
+    if [[ " ${started[@]} " == *"started"* ]]; then
+      TO_KEEP[${x}]=${a}
+      x=$(( $x + 1 ))
+    fi 
   done
+    
+  # add the current version even if it is stopped to list  
+  curr=($(cf app ${NAME}))
+  #if grep -q "stopped" ${curr[@]}; then
+  if [[ " ${curr[@]} " == *"stopped"* ]]; then
+    TO_KEEP[${x}]=${NAME}
+  fi
+  
+  echo "to keep: ${TO_KEEP[@]} , $x"
+  
+  # keep the last #CONCURRENT_VERSIONS from the list
+  idx=$(( ${#TO_KEEP[@]} - ${CONCURRENT_VERSIONS} ))
+  y=0
+  for (( i=idx; i < ${#TO_KEEP[@]}; i++ )); do
+    FINAL[${y}]=${TO_KEEP[i]}  
+    y=$(( $y + 1 ))    
+  done
+ 
+  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
+    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
+  # done
 
   local NAME_ARRAY=($(groupList))
 
@@ -286,7 +352,7 @@ function clean() {
     if (( ${version} > ${VERSION} )); then
       echo "${name} has a version (${version}) greater than the current version (${VERSION})."
       echo "It will not be removed."
-    elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
+    elif [[ " ${FINAL[@]} " == *" ${name} "* ]]; then
       echo "${name} will not be deleted"
     else # delete it
       echo "Removing ${name}"
