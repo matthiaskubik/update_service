@@ -115,29 +115,6 @@ fi
 
 # Verify that AD_ENDPOINT is available (otherwise unset it)
 # If it is available, further validate that $AD_ENDPOINT supports $CF_TARGET as a backend
-# Utility function to validate that $AD_ENDPOINT supports $CF_TARGET as a backend. Returns 0 if so, non-zero otherwise.
-function supports_target() {
-__ad_url="${1}" __cf_url="${2}" python - <<CODE
-import json
-import os
-import requests
-import sys
-ad_url = os.getenv("__ad_url")
-cf_url = os.getenv("__cf_url")
-try:
-  r = requests.get('{}/v1/info/'.format(ad_url), timeout=10)
-  info = json.loads(r.text)
-  for backend in info.get("cloud_backends", []):
-    print backend
-    if backend == cf_url:
-      sys.exit(0)
-  sys.exit(1)
-except Exception, e:
-  print e
-  sys.exit(2)
-CODE
-}
-echo "CF_TARGET is $CF_TARGET_URL"
 if [[ -n "${AD_ENDPOINT}" ]]; then
   up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
   if [[ -z "${up}" ]]; then

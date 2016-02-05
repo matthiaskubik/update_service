@@ -387,3 +387,28 @@ function getRouted() {
   echo "${__routed_apps[@]}"
 }
 
+
+# Utility function to validate that $AD_ENDPOINT supports $CF_TARGET as a backend. Returns 0 if so, non-zero otherwise.
+# Usage: supports_target active_deploy_endpoint target_environment_endpoint
+function supports_target() {
+__ad_url="${1}" __cf_url="${2}" python - <<CODE
+import json
+import os
+import requests
+import sys
+ad_url = os.getenv("__ad_url")
+cf_url = os.getenv("__cf_url")
+try:
+  r = requests.get('{}/v1/info/'.format(ad_url), timeout=10)
+  info = json.loads(r.text)
+  for backend in info.get("cloud_backends", []):
+    print backend
+    if backend == cf_url:
+      sys.exit(0)
+  sys.exit(1)
+except Exception, e:
+  print e
+  sys.exit(2)
+CODE
+}
+
