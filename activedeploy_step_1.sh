@@ -144,7 +144,11 @@ if [[ -n "${AD_ENDPOINT}" ]]; then
     echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
     export AD_ENDPOINT=
   else
-    supports_target ${AD_ENDPOINT} 'https://api.stage1.ng.bluemixn.net' #${CF_TARGET_URL}
+    supports_target ${AD_ENDPOINT} 'https://api.stage1.ng.bluemixn.net' #${CF_TARGET_URL} 
+    if (( $? )); then
+      echo "WARNING: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); reverting to default service"
+      AD_ENDPOINT=
+    fi
   fi
 fi
 
