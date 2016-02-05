@@ -322,6 +322,31 @@ function clean() {
       x=$(( $x + 1 ))
     fi 
   done
+  
+  # look for the routed ones in started apps
+  r=0
+  for t in ${TO_KEEP[@]}; do
+    url=($(cf app ${t}) | grep "urls: ")
+    str1=${url[@]}
+    str2=${str1#*": "}
+    if [[ -n ${str2} ]]; then
+      ROUTED[${r}]=${str2}
+    fi
+  done
+  
+  if (( ${#ROUTED[@]} == 0 )); then
+    echo "No routed apps"
+  elif
+    echo "at least one routed/started app, take the latest one"
+    routed_app_num=${#ROUTED[@]}
+    routed_app_idx=$(( routed_app_num - 1 ))
+    last_routed=${ROUTED[routed_app_idx]}
+    # remove from array and add to the tail
+    TO_KEEP=( "${TO_KEEP[@]/$last_routed}" )
+    x=$(( $x - 1 ))
+    TO_KEEP[${x}]=${last_routed}
+    x=$(( $x + 1 ))
+  fi
     
   # add the current version even if it is stopped to list  
   curr=($(cf app ${NAME}))
