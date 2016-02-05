@@ -114,6 +114,7 @@ if (( ${defaulted_domain} )); then
 fi
 
 # Verify that AD_ENDPOINT is available (otherwise unset it)
+echo "CF_TARGET is $CF_TARGET"
 if [[ -n "${AD_ENDPOINT}" ]]; then
   up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
   if [[ -z "${up}" ]]; then
