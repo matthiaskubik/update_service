@@ -206,7 +206,7 @@ if [[ -n "${original_grp}" ]]; then
   ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
   echo "Identified ad_server_url as: ${update_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
-  update_url="${update_gui_url}/deployments/${update}/?ace_config={%22spaceGuid%22:%22${CF_SPACE}%22}"
+  update_url="${update_gui_url}/deployments/${update}/?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
   echo "Identified update_url as: ${update_url}"
   
   # Wait for completion of rampup phase
