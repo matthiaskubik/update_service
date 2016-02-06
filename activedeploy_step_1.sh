@@ -15,127 +15,139 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
-set -x
+set -x # trace steps
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-echo "EXT_DIR=$EXT_DIR"
-if [[ -f $EXT_DIR/common/cf ]]; then
-  PATH=$EXT_DIR/common:$PATH
-fi
-echo $PATH
+AD_STEP_1=true 
+source ${}/check_and_set_env.sh
 
-# Pull in common methods
-source ${SCRIPTDIR}/activedeploy_common.sh
-# TODO: modify extensions to do this in activedeploy_*/_init.sh instead of activedeploy_common/init.sh
-# TODO: remove from here
-source ${EXT_DIR}/common/utilities/logging_utils.sh
+#echo "EXT_DIR=$EXT_DIR"
+#if [[ -f $EXT_DIR/common/cf ]]; then
+#  PATH=$EXT_DIR/common:$PATH
+#fi
+#echo $PATH
+#
+## Pull in common methods
+#source ${SCRIPTDIR}/activedeploy_common.sh
+## TODO: modify extensions to do this in activedeploy_*/_init.sh instead of activedeploy_common/init.sh
+## TODO: remove from here
+#source ${EXT_DIR}/common/utilities/logging_utils.sh
+#
+## Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
+#if [[ -z ${TARGET_PLATFORM} ]]; then
+#  echo "ERROR: Target platform not specified"
+#  exit 1
+#fi
+#source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
+#
+## Identify NAME if not set from other likely variables
+#if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
+#  export NAME="${CF_APP_NAME}"
+#fi
+#
+#if [[ -z ${NAME} ]] && [[ -n ${CONTAINER_NAME} ]]; then
+#  export NAME="${CONTAINER_NAME}"
+#fi
+#
+#if [[ -z ${NAME} ]]; then
+#  echo "Environment variable NAME must be set to the name of the successor application or container group"
+#  exit 1
+#fi
+#
+## Set default for PORT
+#if [[ -z ${PORT} ]]; then
+#  export PORT=80
+#  echo "Port not specified by environment variable PORT; using ${PORT}"
+#fi
+#
+## Set default for GROUP_SIZE
+#if [[ -z ${GROUP_SIZE} ]]; then
+#  export GROUP_SIZE=1
+#  echo "Group size not specified by environment variable GROUP_SIZE; using ${GROUP_SIZE}"
+#fi
+#
+## Set default for RAMPUP_DURATION
+#if [[ -z ${RAMPUP_DURATION} ]]; then
+#  export RAMPUP_DURATION="5m"
+#  echo "Rampup duration not specified by environment variable RAMPUP_DURATION; using ${RAMPUP_DURATION}"
+#fi
+#
+## Set default for RAMPDOWN_DURATION
+#if [[ -z ${RAMPDOWN_DURATION} ]]; then
+#  export RAMPDOWN_DURATION="5m"
+#  echo "Rampdown duration not specified by environment variable RAMPDOWN_DURATION; using ${RAMPDOWN_DURATION}"
+#fi
+#
+## Set default for ROUTE_HOSTNAME
+#if [[ -z ${ROUTE_HOSTNAME} ]]; then
+#  export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev)
+#  echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
+#fi
+#
+## Set default for ROUTE_DOMAIN
+#defaulted_domain=0
+## Strategy #1: Use the domain for the app with the same ROUTE_HOSTNAME as we are using
+#if [[ -z ${ROUTE_DOMAIN} ]]; then
+#  export ROUTE_DOMAIN=$(cf routes | awk -v hostname="${ROUTE_HOSTNAME}" '$2 == hostname {print $3}')
+#  defaulted_domain=1
+#fi
+## Strategy #2: Use most commonly used domain
+#if [[ -z ${ROUTE_DOMAIN} ]]; then
+#  export ROUTE_DOMAIN=$(cf routes | tail -n +2 | grep -E '[a-z0-9]\.' | awk '{print $3}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+#  defaulted_domain=1
+#fi
+## Strategy #3: Use a domain available to the user
+#if [[ -z ${ROUTE_DOMAIN} ]]; then
+#  export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
+#  defaulted_domain=1
+#fi
+#if [[ -z ${ROUTE_DOMAIN} ]]; then
+#  echo "Route domain not specified by environment variable ROUTE_DOMAIN and no suitable alternative could be identified"
+#  exit 1
+#fi
+#
+#if (( ${defaulted_domain} )); then
+#  echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
+#fi
+#
+## Verify that AD_ENDPOINT is available (otherwise unset it)
+## If it is available, further validate that $AD_ENDPOINT supports $CF_TARGET as a backend
+#if [[ -n "${AD_ENDPOINT}" ]]; then
+#  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
+#  if [[ -z "${up}" ]]; then
+#    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
+#    export AD_ENDPOINT=
+#  else
+#    supports_target ${AD_ENDPOINT} ${CF_TARGET_URL} 
+#    if (( $? )); then
+#      echo "WARNING: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); reverting to default service"
+#      AD_ENDPOINT=
+#    fi
+#  fi
+#fi
+#
+## Set default (1) for CONCURRENT_VERSIONS
+#if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=2; fi
+#
+## debug info
+#which cf
+#cf --version
+#active_deploy service-info
 
-# cd to target so can read ccs.py when needed
+echo "TARGET_PLATFORM = $TARGET_PLATFORM"
+echo "NAME = $NAME"
+echo "AD_ENDPOINT = $AD_ENDPOINT"
+echo "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
+echo "PORT = $PORT"
+echo "GROUP_SIZE = $GROUP_SIZE" 
+echo "RAMPUP_DURATION = $RAMPUP_DURATION" 
+echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION" 
+echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
+echo ""ROUTE_DOMAIN = $ROUTE_DOMAIN"
+
+# cd to target so can read ccs.py when needed (for route detection)
 cd ${SCRIPTDIR}
-
-# Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
-if [[ -z ${TARGET_PLATFORM} ]]; then
-  echo "ERROR: Target platform not specified"
-  exit 1
-fi
-source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
-
-log_and_echo "$INFO" "Sourced ${TARGET_PLATFORM}.sh"
-
-# Identify NAME if not set from other likely variables
-if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
-  export NAME="${CF_APP_NAME}"
-fi
-
-if [[ -z ${NAME} ]] && [[ -n ${CONTAINER_NAME} ]]; then
-  export NAME="${CONTAINER_NAME}"
-fi
-
-if [[ -z ${NAME} ]]; then
-  echo "Environment variable NAME must be set to the name of the successor application or container group"
-  exit 1
-fi
-
-# Set default for PORT
-if [[ -z ${PORT} ]]; then
-  export PORT=80
-  echo "Port not specified by environment variable PORT; using ${PORT}"
-fi
-
-# Set default for GROUP_SIZE
-if [[ -z ${GROUP_SIZE} ]]; then
-  export GROUP_SIZE=1
-  echo "Group size not specified by environment variable GROUP_SIZE; using ${GROUP_SIZE}"
-fi
-
-# Set default for RAMPUP_DURATION
-if [[ -z ${RAMPUP_DURATION} ]]; then
-  export RAMPUP_DURATION="5m"
-  echo "Rampup duration not specified by environment variable RAMPUP_DURATION; using ${RAMPUP_DURATION}"
-fi
-
-# Set default for RAMPDOWN_DURATION
-if [[ -z ${RAMPDOWN_DURATION} ]]; then
-  export RAMPDOWN_DURATION="5m"
-  echo "Rampdown duration not specified by environment variable RAMPDOWN_DURATION; using ${RAMPDOWN_DURATION}"
-fi
-
-# Set default for ROUTE_HOSTNAME
-if [[ -z ${ROUTE_HOSTNAME} ]]; then
-  export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
-fi
-
-# Set default for ROUTE_DOMAIN
-defaulted_domain=0
-# Strategy #1: Use the domain for the app with the same ROUTE_HOSTNAME as we are using
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf routes | awk -v hostname="${ROUTE_HOSTNAME}" '$2 == hostname {print $3}')
-  defaulted_domain=1
-fi
-# Strategy #2: Use most commonly used domain
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf routes | tail -n +2 | grep -E '[a-z0-9]\.' | awk '{print $3}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
-  defaulted_domain=1
-fi
-# Strategy #3: Use a domain available to the user
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  export ROUTE_DOMAIN=$(cf domains | grep -e 'shared' -e 'owned' | head -1 | awk '{print $1}')
-  defaulted_domain=1
-fi
-if [[ -z ${ROUTE_DOMAIN} ]]; then
-  echo "Route domain not specified by environment variable ROUTE_DOMAIN and no suitable alternative could be identified"
-  exit 1
-fi
-
-if (( ${defaulted_domain} )); then
-  echo "Route domain not specified by environment variable ROUTE_DOMAIN; using ${ROUTE_DOMAIN}"
-fi
-
-# Verify that AD_ENDPOINT is available (otherwise unset it)
-# If it is available, further validate that $AD_ENDPOINT supports $CF_TARGET as a backend
-if [[ -n "${AD_ENDPOINT}" ]]; then
-  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
-  if [[ -z "${up}" ]]; then
-    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
-    export AD_ENDPOINT=
-  else
-    supports_target ${AD_ENDPOINT} ${CF_TARGET_URL} 
-    if (( $? )); then
-      echo "WARNING: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); reverting to default service"
-      AD_ENDPOINT=
-    fi
-  fi
-fi
-
-# Set default (1) for CONCURRENT_VERSIONS
-if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=2; fi
-
-# debug info
-which cf
-cf --version
-active_deploy service-info
 
 originals=($(groupList))
 successor="${NAME}"
