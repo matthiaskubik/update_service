@@ -15,7 +15,7 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
-set -x # trace steps
+#set -x # trace steps
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source ${SCRIPTDIR}/check_and_set_env.sh
