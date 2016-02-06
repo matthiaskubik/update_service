@@ -18,59 +18,12 @@
 set -x # trace steps
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+source ${SCRIPTDIR}/check_and_set_env.sh
 
-echo "EXT_DIR=$EXT_DIR"
-if [[ -f $EXT_DIR/common/cf ]]; then
-  PATH=$EXT_DIR/common:$PATH
-fi
-echo $PATH
-
-# Pull in common methods
-source "${SCRIPTDIR}/activedeploy_common.sh"
-
-# Identify TARGET_PLATFORM (CloudFoundry or Container) and pull in specific implementations
-if [[ -z ${TARGET_PLATFORM} ]]; then
-  echo "ERROR: Target platform not specified"
-  exit 1
-fi
-source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
-
-# Identify NAME if not set from other likely variables
-if [[ -z ${NAME} ]] && [[ -n ${CF_APP_NAME} ]]; then
-  export NAME="${CF_APP_NAME}"
-fi
-
-if [[ -z ${NAME} ]] && [[ -n ${CONTAINER_NAME} ]]; then
-  export NAME="${CONTAINER_NAME}"
-fi
-
-if [[ -z ${NAME} ]]; then
-  echo "Environment variable NAME must be set to the name of the successor application or container group"
-  exit 1
-fi
-
-# Verify that AD_ENDPOINT is available (otherwise unset it)
-if [[ -n "${AD_ENDPOINT}" ]]; then
-  up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
-  if [[ -z "${up}" ]]; then
-    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
-    export AD_ENDPOINT=
-  else
-    supports_target ${AD_ENDPOINT} ${CF_TARGET_URL}
-    if (( $? )); then
-      echo "WARNING: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); reverting to default service"
-      AD_ENDPOINT=
-    fi
-  fi
-fi
-
-# Set default (1) for CONCURRENT_VERSIONS
-if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=2; fi
-
-# Debug info about cf cli and active-deploy plugins
-which cf
-cf --version
-active_deploy service-info
+echo "TARGET_PLATFORM = $TARGET_PLATFORM"
+echo "NAME = $NAME"
+echo "AD_ENDPOINT = $AD_ENDPOINT"
+echo "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
 
 # Initial deploy case
 originals=($(groupList))
