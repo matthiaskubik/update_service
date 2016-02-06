@@ -33,8 +33,8 @@ source ${EXT_DIR}/common/utilities/logging_utils.sh
 
 # Identify TARGET_PLATFORM (CloudFoundry or Containers) and pull in specific implementations
 if [[ -z ${TARGET_PLATFORM} ]]; then
-  echo "ERROR: Target platform not specified"
-  exit 1
+  echo "WARNING: Target platform not specified; defaulting to 'CloudFoundry'"
+  export TARGET_PLATFORM='CloudFoundry'
 fi
 source "${SCRIPTDIR}/${TARGET_PLATFORM}.sh"
 
