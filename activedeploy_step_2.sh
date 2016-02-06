@@ -18,7 +18,7 @@
 set -x # trace steps
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-source ${}/check_and_set_env.sh
+source ${SCRIPTDIR}/check_and_set_env.sh
 
 #echo "EXT_DIR=$EXT_DIR"
 #if [[ -f $EXT_DIR/common/cf ]]; then

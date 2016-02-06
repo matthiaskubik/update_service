@@ -20,7 +20,7 @@ set -x # trace steps
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 AD_STEP_1=true 
-source ${}/check_and_set_env.sh
+source ${SCRIPTDIR}/check_and_set_env.sh
 
 #echo "EXT_DIR=$EXT_DIR"
 #if [[ -f $EXT_DIR/common/cf ]]; then
@@ -144,7 +144,7 @@ echo "GROUP_SIZE = $GROUP_SIZE"
 echo "RAMPUP_DURATION = $RAMPUP_DURATION" 
 echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION" 
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
-echo ""ROUTE_DOMAIN = $ROUTE_DOMAIN"
+echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
 
 # cd to target so can read ccs.py when needed (for route detection)
 cd ${SCRIPTDIR}
