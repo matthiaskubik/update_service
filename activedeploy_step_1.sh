@@ -114,11 +114,18 @@ if (( ${defaulted_domain} )); then
 fi
 
 # Verify that AD_ENDPOINT is available (otherwise unset it)
+# If it is available, further validate that $AD_ENDPOINT supports $CF_TARGET as a backend
 if [[ -n "${AD_ENDPOINT}" ]]; then
   up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
   if [[ -z "${up}" ]]; then
     echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
     export AD_ENDPOINT=
+  else
+    supports_target ${AD_ENDPOINT} ${CF_TARGET_URL} 
+    if (( $? )); then
+      echo "WARNING: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); reverting to default service"
+      AD_ENDPOINT=
+    fi
   fi
 fi
 
@@ -202,10 +209,10 @@ if [[ -n "${original_grp}" ]]; then
   active_deploy show $update --timeout 60s
 
   # Identify AD UI server
-  ad_server_url=$(active-deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
+  ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
   echo "Identified ad_server_url as: ${update_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
-  update_url="${update_gui_url}/deployments/${update}/?ace_config={%22spaceGuid%22:%22${CF_SPACE}%22}"
+  update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
   echo "Identified update_url as: ${update_url}"
   
   # Wait for completion of rampup phase
@@ -226,7 +233,7 @@ if [[ -n "${original_grp}" ]]; then
     # delete; return ERROR
     
     # stop rolled back app
-    properties=($(cf active-deploy-show $update | grep "successor group: "))
+    properties=($(active_deploy show $update | grep "successor group: "))
     str1=${properties[@]}
     str2=${str1#*": "}
     app_name=${str2%" app"*}
