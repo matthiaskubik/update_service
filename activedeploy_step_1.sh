@@ -19,12 +19,8 @@ set -x # trace steps
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-echo "RAMPUP_DURATION = $RAMPUP_DURATION" 
-echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION" 
 AD_STEP_1=true 
 source ${SCRIPTDIR}/check_and_set_env.sh
-echo "RAMPUP_DURATION = $RAMPUP_DURATION" 
-echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION" 
 
 echo "TARGET_PLATFORM = $TARGET_PLATFORM"
 echo "NAME = $NAME"
