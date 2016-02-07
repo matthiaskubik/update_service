@@ -25,6 +25,9 @@ echo "NAME = $NAME"
 echo "AD_ENDPOINT = $AD_ENDPOINT"
 echo "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
 
+# cd to target so can read ccs.py when needed (for group deletion)
+cd ${SCRIPTDIR}
+
 # Initial deploy case
 originals=($(groupList))
 
