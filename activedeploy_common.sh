@@ -101,7 +101,7 @@ function rollback() {
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
   
   # stop rolled back app
-  properties=($(active-deploy show ${__update_id} | grep "successor group: "))
+  properties=($(active_deploy show ${__update_id} | grep "successor group: "))
   str1=${properties[@]}
   str2=${str1#*": "}
   app_name=${str2%" app"*}
