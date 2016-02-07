@@ -101,11 +101,11 @@ function rollback() {
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
   
   # stop rolled back app
-  properties=($(cf active-deploy-show ${__update_id} | grep "successor group: "))
+  properties=($(active-deploy show ${__update_id} | grep "successor group: "))
   str1=${properties[@]}
   str2=${str1#*": "}
   app_name=${str2%" app"*}
-  out=$(cf stop ${app_name})
+  out=$(stopGroup ${app_name})
   echo "${app_name} stopped after rollback"
   
   echo "Return code for rollback is ${rc}"
