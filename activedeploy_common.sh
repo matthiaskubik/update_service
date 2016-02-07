@@ -204,10 +204,10 @@ function wait_phase_completion() {
       ;;
     esac
 
-	# the status is 'in_progress'
+	# the status is 'in_progress' or 'rolling back'
     case "${update_phase}" in
       initial)
-      # should only happen if status is rolled back -- so should never get here
+      # should only happen if status is rolled back -- which happens when we finish rolling back
       return 2
       ;;
       completed)
@@ -223,20 +223,22 @@ function wait_phase_completion() {
 
     >&2 echo "Update ${__update_id} is ${update_status} in phase ${update_phase}"
 
-    phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
-    if [[ "${phase_progress}" =~ completed* ]]; then
-      # The phase is completed
-      >&2 echo "Phase ${update_phase} is complete"
-      return 0
-    else
-      >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
-    fi
-    # determine the expected time if haven't done so already; update end_time
-    if [[ "0" = "${__expected_duration}" ]]; then
-      __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
-      __max_wait=$(expr ${__expected_duration}*3 | bc)
-      end_time=$(expr ${start_time} + ${__max_wait})
-      >&2 echo "Phase ${update_phase} has an expected duration of ${__expected_duration}s; will wait ${__max_wait}s ending at ${end_time}"
+    if [[ "in_progress" == "${update_status}" ]]; then
+      phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
+      if [[ "${phase_progress}" =~ completed* ]]; then
+        # The phase is completed
+        >&2 echo "Phase ${update_phase} is complete"
+        return 0
+      else
+        >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
+      fi
+      # determine the expected time if haven't done so already; update end_time
+      if [[ "0" = "${__expected_duration}" ]]; then
+        __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
+        __max_wait=$(expr ${__expected_duration}*3 | bc)
+        end_time=$(expr ${start_time} + ${__max_wait})
+        >&2 echo "Phase ${update_phase} has an expected duration of ${__expected_duration}s; will wait ${__max_wait}s ending at ${end_time}"
+      fi
     fi
 
     sleep 3
