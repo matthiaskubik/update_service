@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
-## TODO use Osthanes ice utilities
-#
+
+MIN_MAX_WAIT=180
+
 
 # Return list of names of existing versions
 # Usage: groupList
@@ -104,5 +105,25 @@ else:
   routes = group.get('Routes', [])
   print('{}'.format(' '.join(routes)))
 CODE
+}
+
+
+# TODO: implement
+# Stop a group
+# Usage: stopGroup name
+function stopGroup() {
+  local __name="${1}"
+
+  echo "Stopping group ${__name} (UNIMPLEMENTED)"
+}
+
+
+# TODO: implement
+# Determine if a group is in the stopped state
+# Ussage: isStopped name
+function isStopped() {
+  local __name="${1}"
+
+  echo "false"
 }
 

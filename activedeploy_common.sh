@@ -16,6 +16,9 @@
 #********************************************************************************
 
 
+# Default value; should be sert in target platform specific files (CloudFoundry.sh, Container.sh, etc)
+if [[ -z ${MIN_MAX_WAIT} ]]; then MIN_MAX_WAIT=90; fi
+
 # Remove white space from the start of string
 # Usage: trim_start string
 function trim_start() {
@@ -101,11 +104,11 @@ function rollback() {
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
   
   # stop rolled back app
-  properties=($(cf active-deploy-show ${__update_id} | grep "successor group: "))
+  properties=($(active_deploy show ${__update_id} | grep "successor group: "))
   str1=${properties[@]}
   str2=${str1#*": "}
   app_name=${str2%" app"*}
-  out=$(cf stop ${app_name})
+  out=$(stopGroup ${app_name})
   echo "${app_name} stopped after rollback"
   
   echo "Return code for rollback is ${rc}"
@@ -204,10 +207,10 @@ function wait_phase_completion() {
       ;;
     esac
 
-	# the status is 'in_progress'
+	# the status is 'in_progress' or 'rolling back'
     case "${update_phase}" in
       initial)
-      # should only happen if status is rolled back -- so should never get here
+      # should only happen if status is rolled back -- which happens when we finish rolling back
       return 2
       ;;
       completed)
@@ -223,18 +226,21 @@ function wait_phase_completion() {
 
     >&2 echo "Update ${__update_id} is ${update_status} in phase ${update_phase}"
 
-    phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
-    if [[ "${phase_progress}" =~ completed* ]]; then
-      # The phase is completed
-      >&2 echo "Phase ${update_phase} is complete"
-      return 0
-    else
-      >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
-    fi
+    if [[ "in_progress" == "${update_status}" ]]; then
+      phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
+      if [[ "${phase_progress}" =~ completed* ]]; then
+        # The phase is completed
+        >&2 echo "Phase ${update_phase} is complete"
+        return 0
+      else
+        >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
+      fi
+    fi # if [[ "in_progress" == "${update_status}" ]]
     # determine the expected time if haven't done so already; update end_time
     if [[ "0" = "${__expected_duration}" ]]; then
       __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
       __max_wait=$(expr ${__expected_duration}*3 | bc)
+      if (( ${__max_wait} < ${MIN_MAX_WAIT} )); then __max_wait=${MIN_MAX_WAIT}; fi
       end_time=$(expr ${start_time} + ${__max_wait})
       >&2 echo "Phase ${update_phase} has an expected duration of ${__expected_duration}s; will wait ${__max_wait}s ending at ${end_time}"
     fi
@@ -276,90 +282,79 @@ function wait_comment() {
   esac
 }
 
-# TODO : write definition
-# function clean() {
 
-  # # Identify list of build numbers to keep
-  # PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
-  # VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
-  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
-  # done
-
-  # local NAME_ARRAY=($(groupList))
-
-  # for name in ${NAME_ARRAY[@]}; do
-    # version=$(echo "${name}" | sed 's#.*_##g')
-    # echo "Considering ${name} with version ${version}"
-    # if (( ${version} > ${VERSION} )); then
-      # echo "${name} has a version (${version}) greater than the current version (${VERSION})."
-      # echo "It will not be removed."
-    # elif [[ " ${TO_KEEP[@]} " == *" ${name} "* ]]; then
-      # echo "${name} will not be deleted"
-    # else # delete it
-      # echo "Removing ${name}"
-      # groupDelete "${name}"
-    # fi
-  # done
-# }
-
-# TODO : write definition
+# Clean up (delete) old versions of the application/container groups.
+# Keeps the currently routed group (ie, current version), the latest deployment (if it failed) and 
+# up to CONCURRENT_VERSIONS-1 other active groups (other stopped groups are removed)
+# Usage: clean
+#   Required environment variable NAME - the name of the current deployed group
+#                                 CONCURRENT_VERSIONS - the number of concurrent versions to keep
 function clean() {
-
   # Identify list of build numbers to keep
   PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
   VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
-  
-  x=0
-  apps=($(groupList))
 
-  # add all not stopped apps to list
-  for a in ${apps[@]}; do
-    started=($(cf app ${a}))
-    #if grep -q "started" ${started[@]}; then
-    if [[ " ${started[@]} " == *"started"* ]]; then
-      TO_KEEP[${x}]=${a}
-      x=$(( $x + 1 ))
-    fi 
+  candidates=($(groupList))
+
+  VERSIONS=()
+  for c in "${candidates[@]}"; do
+    v=$(echo ${c} | rev | cut -d_ -f1 | rev)
+    VERSIONS+=(${v})
   done
-    
-  # add the current version even if it is stopped to list  
-  curr=($(cf app ${NAME}))
-  #if grep -q "stopped" ${curr[@]}; then
-  if [[ " ${curr[@]} " == *"stopped"* ]]; then
-    TO_KEEP[${x}]=${NAME}
-  fi
-  
-  echo "to keep: ${TO_KEEP[@]} , $x"
-  
-  # keep the last #CONCURRENT_VERSIONS from the list
-  idx=$(( ${#TO_KEEP[@]} - ${CONCURRENT_VERSIONS} ))
-  y=0
-  for (( i=idx; i < ${#TO_KEEP[@]}; i++ )); do
-    FINAL[${y}]=${TO_KEEP[i]}  
-    y=$(( $y + 1 ))    
-  done
- 
-  # for (( i=0; i < ${CONCURRENT_VERSIONS}; i++ )); do
-    # TO_KEEP[${i}]="${PATTERN}_$((${VERSION}-${i}))"
-  # done
 
-  local NAME_ARRAY=($(groupList))
+  SORTED_VERSIONS=($(for i in ${VERSIONS[@]}; do echo $i; done | sort -n))
+  echo "clean(): Found sorted ${#SORTED_VERSIONS[@]} versions: ${SORTED_VERSIONS[@]}"
 
-  for name in ${NAME_ARRAY[@]}; do
-    version=$(echo "${name}" | sed 's#.*_##g')
-    echo "Considering ${name} with version ${version}"
-    if (( ${version} > ${VERSION} )); then
-      echo "${name} has a version (${version}) greater than the current version (${VERSION})."
-      echo "It will not be removed."
-    elif [[ " ${FINAL[@]} " == *" ${name} "* ]]; then
-      echo "${name} will not be deleted"
-    else # delete it
-      echo "Removing ${name}"
-      groupDelete "${name}"
+  # Iterate in reverse (most recent to oldest)
+  CURRENT_VERSION=
+  MOST_RECENT=
+  KEPT=()
+  for (( idx=${#SORTED_VERSIONS[@]}-1; idx>=0; idx-- )); do
+    candidate="${PATTERN}_${SORTED_VERSIONS[$idx]}"
+    echo "clean(): Considering candidate ${candidate}"
+
+    # Keep most recent with a route
+    if [[ -z ${CURRENT_VERSION} ]] && [[ -n $(getRoutes "${candidate}") ]]; then
+      # The current version is the first version with a route that we find (recall: reverse order)
+      CURRENT_VERSION="${candidate}"
+      KEPT+=(${candidate})
+      echo "clean(): Identified current version: ${CURRENT_VERSION}; keeping"
+
+    # Delete groups with versions greater than the version of the group just deployed (VERSION)
+    # This represents a group deployed using a previous (or another!) pipeline.
+    # Eventually, the existence of the group will become an issue (name conflict) so delete it now.
+    elif (( ${SORTED_VERSIONS[$idx]} > ${VERSION} )); then
+      echo "clean(): Deleting group ${candidate} from previous pipeline"
+      groupDelete "${candidate}"
+
+    # Keep the most recent without a route IF the current version has has not been found
+    # This is the most recent deploy but it failed (was rolled back)
+    elif [[ -z ${CURRENT_VERSION} ]] &&  [[ -z ${MOST_RECENT} ]]; then
+      MOST_RECENT="${candidate}"
+      # Don't record this in the list of those that were KEPT; it is extra
+      echo "clean(): Current deployment (${MOST_RECENT}) failed; keeping for debug purposes"
+
+    # Delete any (older) stopped groups -- they were failed deploys
+    elif [[ "true" == "$(isStopped ${candidate})" ]]; then
+      echo "clean(): Deleting group ${candidate} (group is in stopped state)"
+      groupDelete "${candidate}"
+
+    # If we've kept enough, delete the group
+    elif (( ${#KEPT[@]} >= ${CONCURRENT_VERSIONS} )); then
+      echo "clean(): Deleting group ${candidate} (already identified sufficient versions to keep)"
+      groupDelete "${candidate}"
+
+    # Otherwise keep the group
+    else
+      KEPT+=(${candidate})
+      echo "clean(): Keeping group ${candidate}"
     fi
+
   done
+
+  echo "clean(): Summary: keeping ${KEPT[@]} ${MOST_RECENT}"
 }
+
 
 # Retrieve a list of apps/groups to which a specific route is mapped
 # Usage: getRouted route candidate_apps

@@ -136,7 +136,7 @@ if [[ -n "${original_grp}" ]]; then
     str1=${properties[@]}
     str2=${str1#*": "}
     app_name=${str2%" app"*}
-    out=$(cf stop ${app_name})
+    out=$(stopGroup ${app_name})
     echo "${app_name} stopped after rollback"
     
     echo "Rolled back, Deleting update record."

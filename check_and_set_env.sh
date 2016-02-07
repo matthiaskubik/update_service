@@ -102,7 +102,7 @@ if [[ -n $AD_STEP_1 ]]; then
 
   # Set default for ROUTE_HOSTNAME
   if [[ -z ${ROUTE_HOSTNAME} ]]; then
-    export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev)
+    export ROUTE_HOSTNAME=$(echo $NAME | rev | cut -d_ -f2- | rev | sed -e 's#_#-##g')
     echo "Route hostname not specified by environment variable ROUTE_HOSTNAME; using ${ROUTE_HOSTNAME}"
   fi
 
