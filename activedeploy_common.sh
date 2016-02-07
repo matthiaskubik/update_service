@@ -319,7 +319,7 @@ function clean() {
     # Eventually, the existence of the group will become an issue (name conflict) so delete it now.
     elif (( ${SORTED_VERSIONS[$idx]} > ${VERSION} )); then
       echo "clean(): Deleting group ${candidate} from previous pipeline"
-      deleteGroup "${candidate}"
+      groupDelete "${candidate}"
 
     # Keep the most recent without a route IF the current version has has not been found
     # This is the most recent deploy but it failed (was rolled back)
@@ -331,12 +331,12 @@ function clean() {
     # Delete any (older) stopped groups -- they were failed deploys
     elif [[ "true" == "$(isStopped ${candidate})" ]]; then
       echo "clean(): Deleting group ${candidate} (group is in stopped state)"
-      deleteGroup "${candidate}"
+      groupDelete "${candidate}"
 
     # If we've kept enough, delete the group
     elif (( ${#KEPT[@]} >= ${CONCURRENT_VERSIONS} )); then
       echo "clean(): Deleting group ${candidate} (already identified sufficient versions to keep)"
-      deleteGroup "${candidate}"
+      groupDelete "${candidate}"
 
     # Otherwise keep the group
     else
