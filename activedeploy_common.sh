@@ -16,6 +16,9 @@
 #********************************************************************************
 
 
+# Default value; should be sert in target platform specific files (CloudFoundry.sh, Container.sh, etc)
+if [[ -z ${MIN_MAX_WAIT} ]]; then MIN_MAX_WAIT=90; fi
+
 # Remove white space from the start of string
 # Usage: trim_start string
 function trim_start() {
@@ -232,13 +235,14 @@ function wait_phase_completion() {
       else
         >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
       fi
-      # determine the expected time if haven't done so already; update end_time
-      if [[ "0" = "${__expected_duration}" ]]; then
-        __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
-        __max_wait=$(expr ${__expected_duration}*3 | bc)
-        end_time=$(expr ${start_time} + ${__max_wait})
-        >&2 echo "Phase ${update_phase} has an expected duration of ${__expected_duration}s; will wait ${__max_wait}s ending at ${end_time}"
-      fi
+    fi # if [[ "in_progress" == "${update_status}" ]]
+    # determine the expected time if haven't done so already; update end_time
+    if [[ "0" = "${__expected_duration}" ]]; then
+      __expected_duration=$(to_seconds $(echo ${phase_progress} | sed 's/.* of \(.*\)/\1/'))
+      __max_wait=$(expr ${__expected_duration}*3 | bc)
+      if (( ${__max_wait} < ${MIN_MAX_WAIT} )); then __max_wait=${MIN_MAX_WAIT}; fi
+      end_time=$(expr ${start_time} + ${__max_wait})
+      >&2 echo "Phase ${update_phase} has an expected duration of ${__expected_duration}s; will wait ${__max_wait}s ending at ${end_time}"
     fi
 
     sleep 3

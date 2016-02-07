@@ -15,6 +15,8 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
+MIN_MAX_WAIT=90
+
 # Return list of names of existing versions
 # Usage: groupList
 function groupList() {

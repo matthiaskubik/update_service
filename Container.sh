@@ -15,8 +15,9 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
-## TODO use Osthanes ice utilities
-#
+
+MIN_MAX_WAIT=180
+
 
 # Return list of names of existing versions
 # Usage: groupList
