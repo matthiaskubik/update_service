@@ -106,3 +106,23 @@ else:
 CODE
 }
 
+
+# TODO: implement
+# Stop a group
+# Usage: stopGroup name
+function stopGroup() {
+  local __name="${1}"
+
+  echo "Stopping group ${__name} (UNIMPLEMENTED)"
+}
+
+
+# TODO: implement
+# Determine if a group is in the stopped state
+# Ussage: isStopped name
+function isStopped() {
+  local __name="${1}"
+
+  echo "false"
+}
+

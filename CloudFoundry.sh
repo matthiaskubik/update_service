@@ -63,3 +63,26 @@ function getRoutes() {
   echo "${routes[@]}"
 }
 
+
+# Stop a group
+# Usage: stopGroup name
+function stopGroup() {
+  local __name="${1}"
+
+  echo "Stopping group ${__name}"
+  cf stop "${__name}"
+}
+
+# Determine if a group is in the stopped state
+# Ussage: isStopped name
+function isStopped() {
+  local __name="${1}"
+
+  local __state=$(cf app "${__name}" | grep "requested state: " | sed -e 's/requested state: //')
+  >&2 echo "${__name} is ${__state}"
+  if [[ "stopped" == "${__state}" ]]; then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
