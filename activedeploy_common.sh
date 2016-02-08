@@ -295,6 +295,7 @@ function clean() {
   VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
 
   candidates=($(groupList))
+  echo  "clean(): Found ${#candidates[@]} versions: ${candidates[@]}"
 
   VERSIONS=()
   for c in "${candidates[@]}"; do
