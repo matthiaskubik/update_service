@@ -15,7 +15,10 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
-set -x # trace steps
+#set $DEBUG to 1 for set -x output
+if [ $DEBUG -eq 1 ]; then
+  set -x # trace steps
+fi
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source ${SCRIPTDIR}/check_and_set_env.sh
