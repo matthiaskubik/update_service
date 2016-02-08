@@ -15,7 +15,18 @@
 #   See the License for the specific language governing permissions and
 #********************************************************************************
 
-set -x # trace steps
+#set $DEBUG to 1 for set -x output
+if [ $DEBUG -eq 1 ]; then
+  set -x # trace steps
+fi
+
+#############
+# Colors    #
+#############
+export green='\e[0;32m'
+export red='\e[0;31m'
+export label_color='\e[0;33m'
+export no_color='\e[0m' # No Color
 
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
@@ -97,11 +108,36 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Executing update: cf active-deploy-create ${create_args}"
   update=$(active_deploy create ${create_args})
-  
-  if (( $? )); then
-    echo "Failed to initiate active deployment; error was:"
-    echo ${update}
-    exit 1
+
+  #SEND REQUESTS HERE
+  export PY_UPDATE_ID=$update
+  curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
+  env_check=$?
+  if [[ env_check -eq '0' ]]; then
+    export TC_API_RES="$(curl -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
+
+    echo TC_API_RES | grep "invalid"
+    if [ $? -eq 0 ]; then
+      #error, invalid API token
+      echo "Invalid toolchain token, exiting..."
+      exit 1
+    else
+      #proceed normally
+      export SERVICE_ID="$(python processJSON.py sid)"
+      export AD_API_URL="$(python processJSON.py ad-url)"
+
+      curl -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
+      curl -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+      python processJSON.py
+    fi
+    
+    if (( $? )); then
+      echo "Failed to initiate active deployment; error was:"
+      echo ${update}
+      exit 1
+    fi
+  else
+    echo "Running in V1 environment, no broker available."
   fi
   
   echo "Initiated update: ${update}"
@@ -112,7 +148,11 @@ if [[ -n "${original_grp}" ]]; then
   echo "Identified ad_server_url as: ${update_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-  echo "Identified update_url as: ${update_url}"
+  if [[ env_check -ne '0' ]]; then
+    echo "**********************************************************************"
+    echo "${green}Direct deployment URL: ${update_url}${no_color}"
+    echo "**********************************************************************"
+  fi
   
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
