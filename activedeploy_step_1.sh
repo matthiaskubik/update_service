@@ -113,7 +113,7 @@ if [[ -n "${original_grp}" ]]; then
   export PY_UPDATE_ID=$update
   curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
   env_check=$?
-  if [ env_check -eq 0 ]; then
+  if [[ env_check -eq '0' ]]; then
     export TC_API_RES="$(curl -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
 
     echo TC_API_RES | grep "invalid"
@@ -148,7 +148,7 @@ if [[ -n "${original_grp}" ]]; then
   echo "Identified ad_server_url as: ${update_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-  if [ env_check -ne 0 ]; then
+  if [[ env_check -ne '0' ]]; then
     echo "**********************************************************************"
     echo "${green}Direct deployment URL: ${update_url}${no_color}"
     echo "**********************************************************************"
