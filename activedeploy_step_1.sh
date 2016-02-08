@@ -20,6 +20,14 @@ if [ $DEBUG -eq 1 ]; then
   set -x # trace steps
 fi
 
+#############
+# Colors    #
+#############
+export green='\e[0;32m'
+export red='\e[0;31m'
+export label_color='\e[0;33m'
+export no_color='\e[0m' # No Color
+
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 AD_STEP_1=true 
@@ -104,7 +112,8 @@ if [[ -n "${original_grp}" ]]; then
   #SEND REQUESTS HERE
   export PY_UPDATE_ID=$update
   curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
-  if [ $? -eq 0 ]; then
+  env_check=$?
+  if [ env_check -eq 0 ]; then
     export TC_API_RES="$(curl -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
 
     echo TC_API_RES | grep "invalid"
@@ -139,7 +148,11 @@ if [[ -n "${original_grp}" ]]; then
   echo "Identified ad_server_url as: ${update_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-  echo "Identified update_url as: ${update_url}"
+  if [ env_check -ne 0 ]; then
+    echo "**********************************************************************"
+    echo "${green}Direct deployment URL: ${update_url}${no_color}"
+    echo "**********************************************************************"
+  fi
   
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
