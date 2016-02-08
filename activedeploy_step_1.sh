@@ -97,6 +97,25 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Executing update: cf active-deploy-create ${create_args}"
   update=$(active_deploy create ${create_args})
+
+  #SEND REQUESTS HERE
+  export PY_UPDATE_ID=$update
+  export TC_API_RES="$(curl -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
+
+  echo TC_API_RES | grep "invalid"
+  if [ $? -eq 0 ]; then
+    #error, invalid API token
+    echo "Invalid toolchain token, exiting..."
+    exit 1
+  else
+    #proceed normally
+    export SERVICE_ID="$(python processJSON.py sid)"
+    export AD_API_URL="$(python processJSON.py ad-url)"
+
+    curl -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
+    curl -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+    python processJSON.py
+  fi
   
   if (( $? )); then
     echo "Failed to initiate active deployment; error was:"
