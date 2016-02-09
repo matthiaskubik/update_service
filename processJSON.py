@@ -16,12 +16,12 @@ api_res = os.environ.get('TC_API_RES')
 api_res_json = json.loads(api_res)
 
 service_id = 0
-ad_broker_url = "https://otc-activedeploy-broker.stage1.ng.bluemix.net/activedeploy-broker/api"
+ad_broker_url = 0
 
 for i in range(len(api_res_json['items'][0]['services'])):
   if "activedeploy" in api_res_json['items'][0]['services'][i]['_id']:
     service_id = api_res_json['items'][0]['services'][i]['_id']
-    #ad_broker_url = api_res_json['items'][0]['services'][i]['url']
+    ad_broker_url = api_res_json['items'][0]['services'][i]['url']
 
 if len(sys.argv) == 1:
   with open("curlRes.json") as json_file:
