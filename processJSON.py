@@ -19,8 +19,8 @@ service_id = 0
 ad_broker_url = 0
 
 for i in range(len(api_res_json['items'][0]['services'])):
-  if "activedeploy" in api_res_json['items'][0]['services'][i]['_id']:
-    service_id = api_res_json['items'][0]['services'][i]['_id']
+  if "activedeploy" in api_res_json['items'][0]['services'][i]['service_id']:
+    service_id = api_res_json['items'][0]['services'][i]['instance_id']
     ad_broker_url = api_res_json['items'][0]['services'][i]['url']
 
 if len(sys.argv) == 1:
