@@ -150,7 +150,7 @@ if [[ -n "${original_grp}" ]]; then
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
   if [[ ${env_check} -ne '0' ]]; then
     echo "**********************************************************************"
-    echo "${green}Direct deployment URL: ${update_url}${no_color}"
+    echo "${green}Direct deployment URL: ${update_url} ${no_color}"
     echo "**********************************************************************"
   fi
   
