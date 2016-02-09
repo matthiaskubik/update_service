@@ -110,11 +110,12 @@ if [[ -n "${original_grp}" ]]; then
   update=$(active_deploy create ${create_args})
 
   #SEND REQUESTS HERE
+  update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   export PY_UPDATE_ID=$update
   curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
   env_check=$?
   if [[ ${env_check} -eq '0' ]]; then
-    export TC_API_RES="$(curl -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
+    export TC_API_RES="$(curl -s -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
 
     echo ${TC_API_RES} | grep "invalid"
     if [ $? -eq 0 ]; then
@@ -125,9 +126,9 @@ if [[ -n "${original_grp}" ]]; then
       #proceed normally
       export SERVICE_ID="$(python processJSON.py sid)"
       export AD_API_URL="$(python processJSON.py ad-url)"
-
-      curl -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
-      curl -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+      
+      curl -s -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\", \"ui_url\": \"$update_gui_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
+      curl -s -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
       python processJSON.py
     fi
     
@@ -146,7 +147,6 @@ if [[ -n "${original_grp}" ]]; then
   # Identify AD UI server
   ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
   echo "Identified ad_server_url as: ${update_url}"
-  update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
   if [[ ${env_check} -ne '0' ]]; then
     echo "**********************************************************************"
