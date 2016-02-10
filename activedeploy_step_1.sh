@@ -109,9 +109,18 @@ if [[ -n "${original_grp}" ]]; then
   echo "Executing update: cf active-deploy-create ${create_args}"
   update=$(active_deploy create ${create_args})
 
-  #SEND REQUESTS HERE
+  # Identify URL for visualization of update. To do this:
+  #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
+  #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
+  #   (c) Construct URL
+  ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
+  echo "Identified ad_server_url as: ${ad_server_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
+  echo "Identified update_gui_url as: ${update_gui_url}"
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
+  echo "Identified update_url as: ${update_url}"
+
+  # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
   curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
   env_check=$?
@@ -145,15 +154,12 @@ if [[ -n "${original_grp}" ]]; then
   echo "Initiated update: ${update}"
   active_deploy show $update --timeout 60s
 
-  # Identify AD UI server
-  ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
-  echo "Identified ad_server_url as: ${update_url}"
-  update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-  if [[ ${env_check} -ne '0' ]]; then
+  # Always log URL to visualization of update
+  #if [[ ${env_check} -ne '0' ]]; then
     echo "**********************************************************************"
     echo "${green}Direct deployment URL: ${update_url} ${no_color}"
     echo "**********************************************************************"
-  fi
+  #fi
   
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
