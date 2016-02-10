@@ -114,11 +114,16 @@ if [[ -n "${original_grp}" ]]; then
   #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
   #   (c) Construct URL
   ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
-  echo "Identified ad_server_url as: ${ad_server_url}"
+  #echo "Identified ad_server_url as: ${ad_server_url}"
   update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   #echo "Identified update_gui_url as: ${update_gui_url}"
   update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
   #echo "Identified update_url as: ${update_url}"
+
+  echo -e "${green}**********************************************************************"
+  echo "Direct deployment URL:"
+  echo "${update_url}"
+  echo -e "**********************************************************************${no_color}"
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
@@ -138,18 +143,7 @@ if [[ -n "${original_grp}" ]]; then
       export AD_API_URL="$(python processJSON.py ad-url)"
       
       curl -s -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
-      broker_check_1=$?
       curl -s -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
-      broker_check_2=$?
-
-      # if either broker call fails, log direct url
-      if [ $broker_check_1 -ne 0 ] || [ $broker_check_2 -ne 0 ]; then
-        echo "**********************************************************************"
-        echo "${green} Direct deployment URL: ${update_url} ${no_color}"
-        echo "**********************************************************************"
-      else
-        python processJSON.py
-      fi
     fi
     
     if (( $? )); then
@@ -163,13 +157,6 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Initiated update: ${update}"
   active_deploy show $update --timeout 60s
-
-  # log URL in V1
-  if [[ ${env_check} -ne '0' ]]; then
-    echo "**********************************************************************"
-    echo "${green} Direct deployment URL: ${update_url} ${no_color}"
-    echo "**********************************************************************"
-  fi
   
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
