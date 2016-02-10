@@ -138,8 +138,18 @@ if [[ -n "${original_grp}" ]]; then
       export AD_API_URL="$(python processJSON.py ad-url)"
       
       curl -s -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
+      broker_check_1=$?
       curl -s -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
-      python processJSON.py
+      broker_check_2=$?
+
+      # if either broker call fails, log direct url
+      if [ $broker_check_1 -ne 0 ] || [ $broker_check_2 -ne 0 ]; then
+        echo "**********************************************************************"
+        echo "${green} Direct deployment URL: ${update_url} ${no_color}"
+        echo "**********************************************************************"
+      else
+        python processJSON.py
+      fi
     fi
     
     if (( $? )); then
@@ -154,7 +164,7 @@ if [[ -n "${original_grp}" ]]; then
   echo "Initiated update: ${update}"
   active_deploy show $update --timeout 60s
 
-  # Always log URL to visualization of update
+  # log URL in V1
   if [[ ${env_check} -ne '0' ]]; then
     echo "**********************************************************************"
     echo "${green} Direct deployment URL: ${update_url} ${no_color}"
