@@ -44,6 +44,25 @@ echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION"
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
 echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
 
+function exit_with_link() {
+  local __status="${1}"
+  local __message="${2}"
+
+  local __color=${green}
+  if (( ${__status} )); then
+    color=${red}
+  fi
+
+  echo ${__color} ${__message} ${no_color}
+
+  echo -e "${color}**********************************************************************"
+  echo "Direct deployment URL:"
+  echo "${update_url}"
+  echo -e "**********************************************************************${no_color}"
+
+  exit ${__status}
+}
+
 # cd to target so can read ccs.py when needed (for route detection)
 cd ${SCRIPTDIR}
 
@@ -147,7 +166,7 @@ if [[ -n "${original_grp}" ]]; then
     echo ${TC_API_RES} | grep "invalid"
     if [ $? -eq 0 ]; then
       #error, invalid API token
-      echo "WARNING: Invalid toolchain token, exiting..."
+      echo "WARNING: Invalid toolchain token."
       # Invalid toolchain token is not a reason to fail
     else
       #proceed normally
@@ -207,17 +226,15 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit 2
+    exit_with_url 2 ""
     ;;
     3) # failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    echo "Phase failed, manual intervension may be needed"
-    exit 3
+    exit_with_url 3 "Phase failed, manual intervension may be needed"
     ;; 
     4) # paused; resume failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    echo "Resume failed, manual intervension may be needed"
-    exit 4
+    exit_with_url 4 "Resume failed, manual intervension may be needed"
     ;;
     5) # unknown status or phase
     #rollback; delete; return ERROR
@@ -236,7 +253,7 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit 5
+    exit_with_url 5 ""
     ;;
     9) # takes too long
     #rollback; delete; return ERROR
@@ -255,14 +272,14 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit 9
+    exit_with_url 9 ""
     ;;
     *)
-    echo "Problems occurred"
-    exit 1
+    exit_with_url 1 "ERROR: Unknown problem occurred"
     ;;
   esac
   
   # Normal exist; show current update
   active_deploy show $update
+  exit_with_url 0 ""
 fi
