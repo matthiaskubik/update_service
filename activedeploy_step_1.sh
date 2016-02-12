@@ -226,15 +226,15 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit_with_url 2 ""
+    exit_with_link 2 ""
     ;;
     3) # failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    exit_with_url 3 "Phase failed, manual intervension may be needed"
+    exit_with_link 3 "Phase failed, manual intervension may be needed"
     ;; 
     4) # paused; resume failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    exit_with_url 4 "Resume failed, manual intervension may be needed"
+    exit_with_link 4 "Resume failed, manual intervension may be needed"
     ;;
     5) # unknown status or phase
     #rollback; delete; return ERROR
@@ -253,7 +253,7 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit_with_url 5 ""
+    exit_with_link 5 ""
     ;;
     9) # takes too long
     #rollback; delete; return ERROR
@@ -272,14 +272,14 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit_with_url 9 ""
+    exit_with_link 9 ""
     ;;
     *)
-    exit_with_url 1 "ERROR: Unknown problem occurred"
+    exit_with_link 1 "ERROR: Unknown problem occurred"
     ;;
   esac
   
   # Normal exist; show current update
   active_deploy show $update
-  exit_with_url 0 ""
+  exit_with_link 0 ""
 fi
