@@ -148,11 +148,16 @@ if [[ -n "${original_grp}" ]]; then
       export SERVICE_ID="$(python processJSON.py sid)"
       export AD_API_URL="$(python processJSON.py ad-url)"
       
+      echo curl -X PUT "$AD_API_URL/v1/service_instances/$SERVICE_ID"
       curl -s -i -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
+      cat curlRes.json
+      echo curl -X PUT "$AD_API_URL/register_deploy/$SERVICE_ID"
       curl -i -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
     fi
+    register_rc=$?
+    echo $register_rc
     
-    if (( $? )); then
+    if (( ${register_rc} )); then
       echo "Failed to record the update"
       # Inability to record an update is not a reason to fail
     fi
