@@ -108,8 +108,12 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Executing update: cf active-deploy-create ${create_args}"
   update=$(active_deploy create ${create_args})
-
-  # TODO: error checking on update
+  # error checking on update
+  update_rc=$?
+  if (( ${update_rc} )); then
+    echo "ERROR: failed to create update; ${update}"
+    exit ${update_rc}
+  fi
 
   # Identify URL for visualization of update. To do this:
   #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
