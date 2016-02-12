@@ -109,6 +109,8 @@ if [[ -n "${original_grp}" ]]; then
   echo "Executing update: cf active-deploy-create ${create_args}"
   update=$(active_deploy create ${create_args})
 
+  # TODO: error checking on update
+
   # Identify URL for visualization of update. To do this:
   #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
   #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
@@ -147,9 +149,8 @@ if [[ -n "${original_grp}" ]]; then
     fi
     
     if (( $? )); then
-      echo "Failed to initiate active deployment; error was:"
-      echo ${update}
-      exit 1
+      echo "Failed to record the update"
+      # Inability to record an update is not a reason to fail
     fi
   else
     echo "Running in V1 environment, no broker available."
