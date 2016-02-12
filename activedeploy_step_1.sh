@@ -136,7 +136,10 @@ if [[ -n "${original_grp}" ]]; then
   curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
   env_check=$?
   if [[ ${env_check} -eq '0' ]]; then
+    echo "PIPELINE_TOOLCHAIN_ID=${PIPELINE_TOOLCHAIN_ID}"
     export TC_API_RES="$(curl -s -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
+   echo "***** TC_API_RES:"
+   echo ${TC_API_RES}
 
     echo ${TC_API_RES} | grep "invalid"
     if [ $? -eq 0 ]; then
