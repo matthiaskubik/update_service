@@ -53,7 +53,7 @@ function exit_with_link() {
     color=${red}
   fi
 
-  echo ${__color} ${__message} ${no_color}
+  echo -e ${__color} ${__message} ${no_color}
 
   echo -e "${color}**********************************************************************"
   echo "Direct deployment URL:"
@@ -210,9 +210,8 @@ if [[ -n "${original_grp}" ]]; then
     str2=${str1#*": "}
     app_name=${str2%" app"*}
     out=$(stopGroup ${app_name})
-    echo "${app_name} stopped after rollback"
+    #echo "${app_name} stopped after rollback"
     
-    echo "Rolled back, Deleting update record."
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
     if (( $clean_rc )); then
@@ -225,8 +224,9 @@ if [[ -n "${original_grp}" ]]; then
     if (( $delete_rc )); then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
-    #delete $update
-    exit_with_link 2 ""
+    # curl -X GET http://$ad_server_url/v1/$CF_SPACE_ID/update/$update/ -H "Authorization: $BEARER_TOKEN"
+    # look for: detailedMessage
+    exit_with_link 2 "${app_name} stopped after rollback"
     ;;
     3) # failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
@@ -238,7 +238,6 @@ if [[ -n "${original_grp}" ]]; then
     ;;
     5) # unknown status or phase
     #rollback; delete; return ERROR
-    echo "Unknown status or phase"
     rollback $update
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
@@ -253,11 +252,10 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit_with_link 5 ""
+    exit_with_link 5 "ERROR: Unknown status or phase encountered"
     ;;
     9) # takes too long
     #rollback; delete; return ERROR
-    echo "Timeout"
     rollback $update
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
@@ -272,7 +270,7 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit_with_link 9 ""
+    exit_with_link 9 "ERROR: Update took too long"
     ;;
     *)
     exit_with_link 1 "ERROR: Unknown problem occurred"
@@ -281,5 +279,5 @@ if [[ -n "${original_grp}" ]]; then
   
   # Normal exist; show current update
   active_deploy show $update
-  exit_with_link 0 ""
+  exit_with_link 0 "Success"
 fi
