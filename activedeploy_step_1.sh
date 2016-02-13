@@ -239,8 +239,8 @@ if [[ -n "${original_grp}" ]]; then
     fi
     # curl -X GET http://$ad_server_url/v1/$CF_SPACE_ID/update/$update/ -H "Authorization: $BEARER_TOKEN"
     # look for: detailedMessage
-    rollback_reason = get_detailed_message $ad_server_url $update
-    exit_message = "${app_name} stopped after rollback"
+    rollback_reason=$(get_detailed_message $ad_server_url $update)
+    exit_message="${app_name} stopped after rollback"
     if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message} caused by: ${rollback_reason}"; fi
     exit_with_link 2 "${exit_message}"
     ;;
