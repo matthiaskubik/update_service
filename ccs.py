@@ -73,6 +73,35 @@ class ActiveDeployService:
         self._cf = cf if cf else self._ccs._cfapi
         self._base_url = '{}/v1'.format(base_url)
         
+    #
+    # Methods to do basic (REST) operations on container service. These methods log the request and response (in case of error)
+    #
+    def _get(self, url, timeout=10):
+        ''' Wrapper for GET call to CCS.
+        
+        Parameters
+            @param url string: relative URL of resource to query 
+            @param timeout int: number of seconds to wait for call to return
+        Returns
+            @rtype requests.Response
+        '''
+        url = '{base_url}/{resource}'.format(base_url=self._base_url, resource=url)
+        headers = {
+            'Authorization': self.__token(),
+            'Accept': 'application/json'
+        }
+        logging.getLogger(__name__).debug("[{timeout}] curl {headers} -X GET '{url}'".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]), 
+                                                                          url=url,
+                                                                          timeout=timeout))
+        retval = requests.get(url, headers=headers, timeout=timeout)
+        if retval.status_code == 400 or retval.status_code >= 500: 
+            logging.getLogger(__name__).debug("curl {headers} '{url}' returned {code}: {response_headers} {text}".format(headers=' '.join(["-H '{0}: {1}'".format(key, value) for key, value in sanitize_headers(headers).iteritems()]),
+                                                                                                       url=url,
+                                                                                                       response_headers=retval.headers,
+                                                                                                       code=retval.status_code,
+                                                                                                       text=sanitize_message(retval.text)))
+        return retval
+
     def _delete(self, url, timeout=10):
         url = '{base_url}/{resource}'.format(base_url=self._base_url, resource=url)
         headers = {
@@ -145,6 +174,25 @@ class ActiveDeployService:
         if 404 == r.status_code:
             logging.getLogger(__name__).debug("Update '{name}' does not exist; exiting".format(name=name))
             return True, ""
+
+    def _show(self, name, **options):
+        return self._get('{space}/update/{name}/'.format(space=self._cf.space_guid(), name=name), **options)
+
+    def show(self, name):
+        success, r = self._with_retries(self._show, name=name, exit_statuses = [200, 403, 404], timeout=30)
+        if not success:
+            return None, 'Unable to read request'
+
+        if 403 == r.status_code:
+            return None, 'Unauthorized'
+
+        if 404 == r.status_code:
+            return None, 'No such update'
+
+        try:
+            return json.loads(r.text), ""
+        except:
+            return None, "Invalid JSON response: {}".format(r.text)
         
     def __token(self):
         t = self._cf.auth_token()

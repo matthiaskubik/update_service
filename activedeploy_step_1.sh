@@ -16,7 +16,7 @@
 #********************************************************************************
 
 #set $DEBUG to 1 for set -x output
-if [ $DEBUG -eq '1' ]; then
+if [[ -n ${DEBUG} ]]; then
   set -x # trace steps
 fi
 
@@ -43,6 +43,38 @@ echo "RAMPUP_DURATION = $RAMPUP_DURATION"
 echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION" 
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
 echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
+
+function exit_with_link() {
+  local __status="${1}"
+  local __message="${2}"
+
+  local color=${green}
+  if (( ${__status} )); then
+    color="${red}"
+  fi
+
+  echo -e "${color}${__message}${no_color}"
+
+  echo -e "${color}**********************************************************************"
+  echo "Direct deployment URL:"
+  echo "${update_url}"
+  echo -e "**********************************************************************${no_color}"
+
+  exit ${__status}
+}
+
+function get_detailed_message() {
+__ad_endpoint="${1}" __update_id="${2}" python - <<CODE
+import ccs
+import os
+ad_server = os.getenv('__ad_endpoint')
+update_id = os.getenv('__update_id')
+ads =  ccs.ActiveDeployService(ad_server)
+update, reason = ads.show(update_id)
+message = update.get('detailedMessage', '') if update is not None else 'Unable to read update record'
+print(message)
+CODE
+}
 
 # cd to target so can read ccs.py when needed (for route detection)
 cd ${SCRIPTDIR}
@@ -115,6 +147,9 @@ if [[ -n "${original_grp}" ]]; then
     exit ${update_rc}
   fi
 
+  echo "Initiated update: ${update}"
+  active_deploy show $update --timeout 60s
+
   # Identify URL for visualization of update. To do this:
   #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
   #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
@@ -136,59 +171,58 @@ if [[ -n "${original_grp}" ]]; then
   curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
   env_check=$?
   if [[ ${env_check} -eq '0' ]]; then
+    echo "PIPELINE_TOOLCHAIN_ID=${PIPELINE_TOOLCHAIN_ID}"
     export TC_API_RES="$(curl -s -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
+   #echo "***** TC_API_RES:"
+   #echo ${TC_API_RES}
 
     echo ${TC_API_RES} | grep "invalid"
     if [ $? -eq 0 ]; then
       #error, invalid API token
-      echo "Invalid toolchain token, exiting..."
-      exit 1
+      echo "WARNING: Invalid toolchain token."
+      # Invalid toolchain token is not a reason to fail
     else
       #proceed normally
       export SERVICE_ID="$(python processJSON.py sid)"
       export AD_API_URL="$(python processJSON.py ad-url)"
       
+      echo "SERVICE_ID=${SERVICE_ID}"
+      echo "AD_API_URL=${AD_API_URL}"
+
       curl -s -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
       curl -s -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
-    fi
-    
-    if (( $? )); then
-      echo "Failed to record the update"
-      # Inability to record an update is not a reason to fail
+      if (( $? )); then
+        echo "WARNING: Failed to record the update"
+        # Inability to record an update is not a reason to fail
+      fi
     fi
   else
-    echo "Running in V1 environment, no broker available."
+    echo "INFO: Running in V1 environment, no broker available."
   fi
-  
-  echo "Initiated update: ${update}"
-  active_deploy show $update --timeout 60s
   
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
   echo "wait result is $rc"
- case "$rc" in
+  case "$rc" in
     0) # phase done
     # continue (advance to test)
     echo "Phase done, advance to test"
     active_deploy advance $update
     ;;
+
     1) # completed
     # cannot rollback; delete; return OK 
     echo "Cannot rollback, phase completed. Deleting update record"
     delete $update
     ;;
+
     2) # rolled back
     # delete; return ERROR
     
     # stop rolled back app
-    properties=($(active_deploy show $update | grep "successor group: "))
-    str1=${properties[@]}
-    str2=${str1#*": "}
-    app_name=${str2%" app"*}
-    out=$(stopGroup ${app_name})
-    echo "${app_name} stopped after rollback"
+    out=$(stopGroup ${successor_grp})
+    echo "${successor_grp} stopped after rollback"
     
-    echo "Rolled back, Deleting update record."
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
     if (( $clean_rc )); then
@@ -201,22 +235,26 @@ if [[ -n "${original_grp}" ]]; then
     if (( $delete_rc )); then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
-    #delete $update
-    exit 2
+    # curl -X GET http://$ad_server_url/v1/$CF_SPACE_ID/update/$update/ -H "Authorization: $BEARER_TOKEN"
+    # look for: detailedMessage
+    rollback_reason=$(get_detailed_message $ad_server_url $update)
+    exit_message="${successor_grp} rolled back"
+    if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message}.\nRollback caused by: ${rollback_reason}"; fi
+    exit_with_link 2 "${exit_message}"
     ;;
+
     3) # failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    echo "Phase failed, manual intervension may be needed"
-    exit 3
+    exit_with_link 3 "Phase failed, manual intervension may be needed"
     ;; 
+
     4) # paused; resume failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    echo "Resume failed, manual intervension may be needed"
-    exit 4
+    exit_with_link 4 "Resume failed, manual intervension may be needed"
     ;;
+
     5) # unknown status or phase
     #rollback; delete; return ERROR
-    echo "Unknown status or phase"
     rollback $update
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
@@ -231,11 +269,11 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit 5
+    exit_with_link 5 "ERROR: Unknown status or phase encountered"
     ;;
+
     9) # takes too long
     #rollback; delete; return ERROR
-    echo "Timeout"
     rollback $update
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
@@ -250,34 +288,15 @@ if [[ -n "${original_grp}" ]]; then
       echo "WARN: Unable to delete update record ${update_id}"
     fi
     #delete $update
-    exit 9
+    exit_with_link 9 "ERROR: Update took too long"
     ;;
+
     *)
-    echo "Problems occurred"
-    exit 1
+    exit_with_link 1 "ERROR: Unknown problem occurred"
     ;;
   esac
   
-#  if (( $rc )); then
-#    echo "Rampup failed; rolling back update $update"
-#    echo $(wait_comment $rc)
-#    rollback $update || true
-#    if (( $rollback_rc )); then
-#      echo "WARN: Unable to rollback update"
-#      active_deploy list $update
-#    fi 
-#    
-#    # Cleanup - delete update record
-#    echo "Deleting update record"
-#    delete $update && delete_rc=$? || delete_rc=$?
-#    if (( $delete_rc )); then
-#      echo "WARN: Unable to delete update record $update"
-#    fi
-#    exit 1
-#  else
-#    # no error ... advance to test phase
-#    active_deploy advance $update
-#  fi
-
-  active_deploy list
+  # Normal exist; show current update
+  active_deploy show $update
+  exit_with_link 0 "${successor_grp} successfully advanced to test phase"
 fi
