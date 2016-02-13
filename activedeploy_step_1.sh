@@ -50,10 +50,10 @@ function exit_with_link() {
 
   local __color=${green}
   if (( ${__status} )); then
-    color=${red}
+    color="${red}"
   fi
 
-  echo -e ${__color} ${__message} ${no_color}
+  echo -e "${__color} ${__message} ${no_color}"
 
   echo -e "${color}**********************************************************************"
   echo "Direct deployment URL:"
@@ -61,6 +61,19 @@ function exit_with_link() {
   echo -e "**********************************************************************${no_color}"
 
   exit ${__status}
+}
+
+function get_detailed_message() {
+__ad_endpoint="${1}" __update_id="${2}" python - <<CODE
+import ccs
+import os
+ad_server = os.get('__ad_endpoint')
+update_id = os.get('__update_id')
+ads =  ccs.ActiveDeployService(ad_server)
+update, reason = ads.show(update_id)
+message = update.get('detailedMessage', '') if update is not None else 'Unable to read update record'
+print(message)
+CODE
 }
 
 # cd to target so can read ccs.py when needed (for route detection)
@@ -226,7 +239,10 @@ if [[ -n "${original_grp}" ]]; then
     fi
     # curl -X GET http://$ad_server_url/v1/$CF_SPACE_ID/update/$update/ -H "Authorization: $BEARER_TOKEN"
     # look for: detailedMessage
-    exit_with_link 2 "${app_name} stopped after rollback"
+    rollback_reason = get_detailed_message $ad_server_url $update
+    exit_message = "${app_name} stopped after rollback"
+    if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message} caused by: ${rollback_reason}"; fi
+    exit_with_link 2 "${exit_message}"
     ;;
     3) # failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
