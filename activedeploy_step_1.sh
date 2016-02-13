@@ -67,8 +67,8 @@ function get_detailed_message() {
 __ad_endpoint="${1}" __update_id="${2}" python - <<CODE
 import ccs
 import os
-ad_server = os.get('__ad_endpoint')
-update_id = os.get('__update_id')
+ad_server = os.getenv('__ad_endpoint')
+update_id = os.getenv('__update_id')
 ads =  ccs.ActiveDeployService(ad_server)
 update, reason = ads.show(update_id)
 message = update.get('detailedMessage', '') if update is not None else 'Unable to read update record'
