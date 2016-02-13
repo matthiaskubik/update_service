@@ -53,7 +53,7 @@ function exit_with_link() {
     color="${red}"
   fi
 
-  echo -e "${color} ${__message} ${no_color}"
+  echo -e "${color}${__message}${no_color}"
 
   echo -e "${color}**********************************************************************"
   echo "Direct deployment URL:"
@@ -203,25 +203,23 @@ if [[ -n "${original_grp}" ]]; then
   # Wait for completion of rampup phase
   wait_phase_completion $update && rc=$? || rc=$?
   echo "wait result is $rc"
- case "$rc" in
+  case "$rc" in
     0) # phase done
     # continue (advance to test)
     echo "Phase done, advance to test"
     active_deploy advance $update
     ;;
+
     1) # completed
     # cannot rollback; delete; return OK 
     echo "Cannot rollback, phase completed. Deleting update record"
     delete $update
     ;;
+
     2) # rolled back
     # delete; return ERROR
     
     # stop rolled back app
-    #properties=($(active_deploy show $update | grep "successor group: "))
-    #str1=${properties[@]}
-    #str2=${str1#*": "}
-    #app_name=${str2%" app"*}
     out=$(stopGroup ${successor_grp})
     echo "${successor_grp} stopped after rollback"
     
@@ -244,14 +242,17 @@ if [[ -n "${original_grp}" ]]; then
     if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message}.\nRollback caused by: ${rollback_reason}"; fi
     exit_with_link 2 "${exit_message}"
     ;;
+
     3) # failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
     exit_with_link 3 "Phase failed, manual intervension may be needed"
     ;; 
+
     4) # paused; resume failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
     exit_with_link 4 "Resume failed, manual intervension may be needed"
     ;;
+
     5) # unknown status or phase
     #rollback; delete; return ERROR
     rollback $update
@@ -270,6 +271,7 @@ if [[ -n "${original_grp}" ]]; then
     #delete $update
     exit_with_link 5 "ERROR: Unknown status or phase encountered"
     ;;
+
     9) # takes too long
     #rollback; delete; return ERROR
     rollback $update
@@ -288,6 +290,7 @@ if [[ -n "${original_grp}" ]]; then
     #delete $update
     exit_with_link 9 "ERROR: Update took too long"
     ;;
+
     *)
     exit_with_link 1 "ERROR: Unknown problem occurred"
     ;;
@@ -295,5 +298,5 @@ if [[ -n "${original_grp}" ]]; then
   
   # Normal exist; show current update
   active_deploy show $update
-  exit_with_link 0 "Success"
+  exit_with_link 0 "${successor_grp} successfully advanced to test phase"
 fi
