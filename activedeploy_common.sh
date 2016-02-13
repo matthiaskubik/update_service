@@ -16,6 +16,12 @@
 #********************************************************************************
 
 
+# Method that does something only if DEBUG is set
+function debugme() {
+  (( ${DEBUG} )) && "$@" || :
+}
+
+
 # Default value; should be sert in target platform specific files (CloudFoundry.sh, Container.sh, etc)
 if [[ -z ${MIN_MAX_WAIT} ]]; then MIN_MAX_WAIT=90; fi
 
@@ -108,6 +114,9 @@ function rollback() {
   str1=${properties[@]}
   str2=${str1#*": "}
   app_name=${str2%" app"*}
+  # TODO replace the above 4 lines with these using our get_properties() utility method
+  #IFS=$'\n' properties=($(active_deploy show ${__update_id} | grep ':'))
+  #app_name=$(get_property 'successor group' ${properties[@]} | sed -e '#s/ app.*$##')
   out=$(stopGroup ${app_name})
   echo "${app_name} stopped after rollback"
   
@@ -295,7 +304,7 @@ function clean() {
   VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
 
   candidates=($(groupList))
-  echo  "clean(): Found ${#candidates[@]} versions: ${candidates[@]}"
+  debugme echo "clean(): Found ${#candidates[@]} versions: ${candidates[@]}"
 
   VERSIONS=()
   for c in "${candidates[@]}"; do
@@ -304,7 +313,7 @@ function clean() {
   done
 
   SORTED_VERSIONS=($(for i in ${VERSIONS[@]}; do echo $i; done | sort -n))
-  echo "clean(): Found sorted ${#SORTED_VERSIONS[@]} versions: ${SORTED_VERSIONS[@]}"
+  debugme echo "clean(): Found sorted ${#SORTED_VERSIONS[@]} versions: ${SORTED_VERSIONS[@]}"
 
   # Iterate in reverse (most recent to oldest)
   CURRENT_VERSION=
@@ -312,7 +321,7 @@ function clean() {
   KEPT=()
   for (( idx=${#SORTED_VERSIONS[@]}-1; idx>=0; idx-- )); do
     candidate="${PATTERN}_${SORTED_VERSIONS[$idx]}"
-    echo "clean(): Considering candidate ${candidate}"
+    debugme echo "clean(): Considering candidate ${candidate}"
 
     # Keep most recent with a route
     if [[ -z ${CURRENT_VERSION} ]] && [[ -n $(getRoutes "${candidate}") ]]; then
