@@ -218,12 +218,12 @@ if [[ -n "${original_grp}" ]]; then
     # delete; return ERROR
     
     # stop rolled back app
-    properties=($(active_deploy show $update | grep "successor group: "))
-    str1=${properties[@]}
-    str2=${str1#*": "}
-    app_name=${str2%" app"*}
-    out=$(stopGroup ${app_name})
-    #echo "${app_name} stopped after rollback"
+    #properties=($(active_deploy show $update | grep "successor group: "))
+    #str1=${properties[@]}
+    #str2=${str1#*": "}
+    #app_name=${str2%" app"*}
+    out=$(stopGroup ${successor_grp})
+    echo "${successor_grp} stopped after rollback"
     
     # Cleanup - delete older updates
     clean && clean_rc=$? || clean_rc=$?
@@ -240,8 +240,8 @@ if [[ -n "${original_grp}" ]]; then
     # curl -X GET http://$ad_server_url/v1/$CF_SPACE_ID/update/$update/ -H "Authorization: $BEARER_TOKEN"
     # look for: detailedMessage
     rollback_reason=$(get_detailed_message $ad_server_url $update)
-    exit_message="${app_name} stopped after rollback"
-    if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message}. Rollback caused by: ${rollback_reason}"; fi
+    exit_message="${successor_grp} rolled back"
+    if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message}.\nRollback caused by: ${rollback_reason}"; fi
     exit_with_link 2 "${exit_message}"
     ;;
     3) # failed
