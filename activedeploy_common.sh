@@ -18,7 +18,7 @@
 
 # Method that does something only if DEBUG is set
 function debugme() {
-  (( ${DEBUG} )) && "$@" || :
+  [[ -n ${DEBUG} ]] && "$@" || :
 }
 
 
