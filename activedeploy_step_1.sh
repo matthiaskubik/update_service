@@ -48,12 +48,12 @@ function exit_with_link() {
   local __status="${1}"
   local __message="${2}"
 
-  local __color=${green}
+  local color=${green}
   if (( ${__status} )); then
     color="${red}"
   fi
 
-  echo -e "${__color} ${__message} ${no_color}"
+  echo -e "${color} ${__message} ${no_color}"
 
   echo -e "${color}**********************************************************************"
   echo "Direct deployment URL:"
@@ -241,7 +241,7 @@ if [[ -n "${original_grp}" ]]; then
     # look for: detailedMessage
     rollback_reason=$(get_detailed_message $ad_server_url $update)
     exit_message="${app_name} stopped after rollback"
-    if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message} caused by: ${rollback_reason}"; fi
+    if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message}. Rollback caused by: ${rollback_reason}"; fi
     exit_with_link 2 "${exit_message}"
     ;;
     3) # failed
