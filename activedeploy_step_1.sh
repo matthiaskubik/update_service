@@ -116,6 +116,11 @@ fi
 # If a problem was found with $AD_ENDPOINT, fail now
 if [[ -n ${MUSTFAIL_ACTIVEDEPLOY} ]]; then
   echo -e "${red}Active deploy service unavailable; failing.${no_color}"
+  # Cleanup - delete older updates
+  clean && clean_rc=$? || clean_rc=$?
+  if (( $clean_rc )); then
+    echo "WARN: Unable to delete old versions."
+  fi
   exit 128
 fi
 
