@@ -20,14 +20,6 @@ if [[ -n ${DEBUG} ]]; then
   set -x # trace steps
 fi
 
-#############
-# Colors    #
-#############
-export green='\e[0;32m'
-export red='\e[0;31m'
-export label_color='\e[0;33m'
-export no_color='\e[0m' # No Color
-
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 AD_STEP_1=true 
@@ -119,6 +111,12 @@ if [[ 1 = ${#originals[@]} ]] || [[ -z $original_grp ]]; then
   exit 0
 else
   echo "INFO: Not initial version"
+fi
+
+# If a problem was found with $AD_ENDPOINT, fail now
+if [[ -n ${MUSTFAIL_ACTIVEDEPLOY} ]]; then
+  echo -e "${red}Active deploy service unavailable; failing.${no_color}"
+  exit 128
 fi
 
 successor_grp=${NAME}

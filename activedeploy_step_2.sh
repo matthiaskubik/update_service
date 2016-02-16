@@ -34,9 +34,16 @@ cd ${SCRIPTDIR}
 # Initial deploy case
 originals=($(groupList))
 
+# Nothing to do in initial deploy scenario
 if [[ 1 = ${#originals[@]} ]]; then
   echo "INFO: Initial version (single version deployed); exiting"
   exit 0
+fi
+
+# If a problem was found with $AD_ENDPOINT, fail now
+if [[ -n ${MUSTFAIL_ACTIVEDEPLOY} ]]; then
+  echo -e "${red}Active deploy service unavailable; failing.${no_color}"
+  exit 128
 fi
 
 # Identify the active deploy in progress. We do so by looking for a deploy 
