@@ -19,6 +19,12 @@
 ################### Common to both step_1 and step_2
 ###################
 
+# Colors
+export green='\e[0;32m'
+export red='\e[0;31m'
+export label_color='\e[0;33m'
+export no_color='\e[0m' # No Color
+
 echo "EXT_DIR=$EXT_DIR"
 if [[ -f $EXT_DIR/common/cf ]]; then
   PATH=$EXT_DIR/common:$PATH
@@ -52,18 +58,18 @@ if [[ -z ${NAME} ]]; then
   exit 1
 fi
 
-# Verify that AD_ENDPOINT is available (otherwise unset it)
+# Verify that AD_ENDPOINT is available (otherwise set MUSTFAIL_ACTIVEDEPLOY)
 # If it is available, further validate that $AD_ENDPOINT supports $CF_TARGET as a backend
 if [[ -n "${AD_ENDPOINT}" ]]; then
   up=$(timeout 10 curl -s ${AD_ENDPOINT}/health_check/ | grep status | grep up)
   if [[ -z "${up}" ]]; then
-    echo "WARNING: Unable to validate availability of ${AD_ENDPOINT}; reverting to default endpoint"
-    export AD_ENDPOINT=
+    echo -e "${red}ERROR: Unable to validate availability of Active Deploy service ${AD_ENDPOINT}; failing active deploy${no_color}"
+    export MUSTFAIL_ACTIVEDEPLOY=true
   else
     supports_target ${AD_ENDPOINT} ${CF_TARGET_URL} 
     if (( $? )); then
-      echo "WARNING: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); reverting to default service"
-      AD_ENDPOINT=
+      echo -e "${red}ERROR: Selected Active Deploy service (${AD_ENDPOINT}) does not support target environment (${CF_TARGET_URL}); failing active deploy${no_color}"
+      export MUSTFAIL_ACTIVEDEPLOY=true
     fi
   fi
 fi

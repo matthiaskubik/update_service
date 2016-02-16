@@ -87,10 +87,41 @@ function active_deploy() {
 }
 
 
+# Execute a function up to $WITH_RETRIES_MAX_RETRIES (default 3) times.
+# Retries are done in only certain circumstances (cf. computation of ${retry}).
+# Currently, the only reason is a failure to contact the database.
+# A short sleep of $WITH_RETRIES_SLEEP seconds (default 2s) is exectued between attempts.
+function with_retry() {
+  if [[ -z ${WITH_RETRIES_SLEEP} ]]; then WITH_RETRIES_SLEEP=2; fi
+  if [[ -z ${WITH_RETRIES_MAX_RETRIES} ]]; then WITH_RETRIES_MAX_RETRIES=3; fi
+
+  attempt=0
+  retry=true
+  while [[ -n ${retry} ]] && (( ${attempt} < ${WITH_RETRIES_MAX_RETRIES} )); do
+    if [[ -n ${DEBUG} ]]; then >&2 echo "Attempt ${attempt}"; fi
+    let attempt=attempt+1
+    $* > /tmp/$$ && rc=$? || rc=$?
+    if (( ${rc} )); then
+      # "BXNAD0315" is "Error contacting the database."
+      retry=$(grep -e "BXNAD0315" /tmp/$$)
+      if [[ -n ${retry} ]] && (( ${attempt} < ${WITH_RETRIES_MAX_RETRIES} )); then
+        >&2 echo "with_retry() call FAILED: ${retry}"
+        if [[ -n ${DEBUG} ]]; then >&2 echo "Retrying in ${WITH_RETRIES_SLEEP} seconds"; fi
+        sleep ${WITH_RETRIES_SLEEP}
+      fi
+    else retry=
+    fi
+  done
+  cat /tmp/$$
+  rm -f /tmp/$$
+  return ${rc}
+}
+
+
 function advance() {
   __update_id="${1}"
   echo "Advancing update ${__update_id}"
-  active_deploy show ${__update_id}
+  with_retry active_deploy show ${__update_id}
 
   active_deploy advance ${__update_id}
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
@@ -104,18 +135,18 @@ function rollback() {
   __update_id="${1}"
   
   echo "Rolling back update ${__update_id}"
-  active_deploy show ${__update_id}
+  with_retry active_deploy show ${__update_id}
 
   active_deploy rollback ${__update_id}
   wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
   
   # stop rolled back app
-  properties=($(active_deploy show ${__update_id} | grep "successor group: "))
+  properties=($(with_retry active_deploy show ${__update_id} | grep "successor group: "))
   str1=${properties[@]}
   str2=${str1#*": "}
   app_name=${str2%" app"*}
   # TODO replace the above 4 lines with these using our get_properties() utility method
-  #IFS=$'\n' properties=($(active_deploy show ${__update_id} | grep ':'))
+  #IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
   #app_name=$(get_property 'successor group' ${properties[@]} | sed -e '#s/ app.*$##')
   out=$(stopGroup ${app_name})
   echo "${app_name} stopped after rollback"
@@ -132,7 +163,7 @@ function delete() {
   echo "Not deleting update ${__update_id}"
   
   # echo "Deleting update ${__update_id}"
-  # active_deploy show ${__update_id}
+  # with_retry active_deploy show ${__update_id}
   # active_deploy delete ${__update_id} --force
 }
 
@@ -186,7 +217,7 @@ function wait_phase_completion() {
   
   local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
   while (( $(date +%s) < ${end_time} )); do
-    IFS=$'\n' properties=($(active_deploy show ${__update_id} | grep ':'))
+    IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
 
     update_phase=$(get_property 'phase' ${properties[@]})
     update_status=$(get_property 'status' ${properties[@]})

@@ -20,14 +20,6 @@ if [[ -n ${DEBUG} ]]; then
   set -x # trace steps
 fi
 
-#############
-# Colors    #
-#############
-export green='\e[0;32m'
-export red='\e[0;31m'
-export label_color='\e[0;33m'
-export no_color='\e[0m' # No Color
-
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 AD_STEP_1=true 
@@ -121,12 +113,21 @@ else
   echo "INFO: Not initial version"
 fi
 
+# If a problem was found with $AD_ENDPOINT, fail now
+if [[ -n ${MUSTFAIL_ACTIVEDEPLOY} ]]; then
+  echo -e "${red}Active deploy service unavailable; failing.${no_color}"
+  # Cleanup - delete older updates
+  clean && clean_rc=$? || clean_rc=$?
+  if (( $clean_rc )); then
+    echo "WARN: Unable to delete old versions."
+  fi
+  exit 128
+fi
+
 successor_grp=${NAME}
 
 echo "INFO: Original group is ${original_grp} (${original_grp_id})"
 echo "INFO: Successor group is ${successor_grp}  (${UPDATE_ID})"
-
-active_deploy list --timeout 60s
 
 # Do update if there is an original group
 if [[ -n "${original_grp}" ]]; then
@@ -144,11 +145,12 @@ if [[ -n "${original_grp}" ]]; then
   update_rc=$?
   if (( ${update_rc} )); then
     echo "ERROR: failed to create update; ${update}"
+    with_retry active_deploy list --timeout 60s
     exit ${update_rc}
   fi
 
   echo "Initiated update: ${update}"
-  active_deploy show $update --timeout 60s
+  with_retry active_deploy show $update --timeout 60s
 
   # Identify URL for visualization of update. To do this:
   #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
@@ -297,6 +299,6 @@ if [[ -n "${original_grp}" ]]; then
   esac
   
   # Normal exist; show current update
-  active_deploy show $update
+  with_retry active_deploy show $update
   exit_with_link 0 "${successor_grp} successfully advanced to test phase"
 fi
