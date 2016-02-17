@@ -120,13 +120,13 @@ function with_retry() {
 
 function advance() {
   __update_id="${1}"
-  echo "Advancing update ${__update_id}"
+  >&2 echo "Advancing update ${__update_id}"
   with_retry active_deploy show ${__update_id}
 
   active_deploy advance ${__update_id}
-  wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
+  wait_phase_completion ${__update_id} && rc=$? || rc=$?
   
-  echo "Return code for advance is ${rc}"
+  >&2 echo "Return code for advance is ${rc}"
   return ${rc}
 }
 
@@ -134,11 +134,11 @@ function advance() {
 function rollback() {
   __update_id="${1}"
   
-  echo "Rolling back update ${__update_id}"
+  >&2 echo "Rolling back update ${__update_id}"
   with_retry active_deploy show ${__update_id}
 
   active_deploy rollback ${__update_id}
-  wait_phase_completion ${__update_id} rampdown && rc=$? || rc=$?
+  wait_phase_completion ${__update_id} && rc=$? || rc=$?
   
   # stop rolled back app
   properties=($(with_retry active_deploy show ${__update_id} | grep "successor group: "))
@@ -149,9 +149,9 @@ function rollback() {
   #IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
   #app_name=$(get_property 'successor group' ${properties[@]} | sed -e '#s/ app.*$##')
   out=$(stopGroup ${app_name})
-  echo "${app_name} stopped after rollback"
+  >&2 echo "${app_name} stopped after rollback"
   
-  echo "Return code for rollback is ${rc}"
+  >&2 echo "Return code for rollback is ${rc}"
   return ${rc}
 }
 
@@ -160,7 +160,7 @@ function delete() {
   __update_id="${1}"
   
   # Keep records for now
-  echo "Not deleting update ${__update_id}"
+  >&2 echo "Not deleting update ${__update_id}"
   
   # echo "Deleting update ${__update_id}"
   # with_retry active_deploy show ${__update_id}
@@ -207,7 +207,7 @@ function wait_phase_completion() {
   local __expected_duration=0
 
   if [[ -z ${__update_id} ]]; then
-    >&2 echo "ERROR: Expected update identifier to be passed into wait_for" 
+    >&2 echo "ERROR: Expected update identifier to be passed into wait_phase_completion" 
     return 1
   fi
 
