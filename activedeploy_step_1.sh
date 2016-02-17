@@ -79,7 +79,7 @@ function delete_update() {
 }
 
 # Delete older updates and update record
-function clean_delete() {
+function cleanup() {
   local __update="${1}"
 
   clean && clean_rc=$? || clean_rc=$?
@@ -94,7 +94,7 @@ function rollback_and_cleanup() {
   local __update="${1}"
 
   rollback ${__update}
-  clean_delete
+  cleanup
 }
 # cd to target so can read ccs.py when needed (for route detection)
 cd ${SCRIPTDIR}
@@ -237,8 +237,40 @@ if [[ -n "${original_grp}" ]]; then
     0) # phase done
     # continue (advance to test)
     echo "Phase done, advance to test"
-    active_deploy advance $update && advance_rc=$? || advance_rc=$?
+    advance $update && advance_rc=$? || advance_rc=$?
     if (( ${advance_rc} )); then
+      case "${advance_rc}" in
+        0) # phase done
+        echo "INFO: test phase complete"
+        ;;
+        1) # completed
+        delete_update ${update}
+        ;;
+        2) # rolled back
+        cleanup ${update}
+        rollback_reason=$(get_detailed_message $ad_server_url $update)
+        exit_message="${successor_grp} rolled back"
+        if [[ -n "${rollback_reason}" ]]; then exit_message="${exit_message}.\nRollback caused by: ${rollback_reason}"; fi
+        exit_with_link 2 "${exit_message}"
+        ;;
+        3) # failed
+        exit_with_link 3 "Phase failed, manual intervension may be needed"
+        ;;
+        4) # paused
+        exit_with_link 4 "ERROR: Resume failed, manual intervension may be needed"
+        ;;
+        5) # unknown
+        rollback_and_cleanup ${update}
+        exit_with_link 5 "ERROR: Unknown status or phase encountered"
+        ;;
+        9) # too long
+        rollback_and_cleanup ${update}
+        exit_with_link 9 "ERROR: Update took too long"
+        ;;
+        *)
+        exit_with_link 1 "ERROR: Unknown problem occurred"
+        ;;
+      esac
       rollback_and_cleanup ${update}
       exit_with_link 6 "ERROR: advance to test phase failed."
     fi
@@ -257,7 +289,7 @@ if [[ -n "${original_grp}" ]]; then
     out=$(stopGroup ${successor_grp})
     echo "${successor_grp} stopped after rollback"
     
-    clean_delete ${update}
+    cleanup ${update}
 
     rollback_reason=$(get_detailed_message $ad_server_url $update)
     exit_message="${successor_grp} rolled back"
@@ -272,7 +304,7 @@ if [[ -n "${original_grp}" ]]; then
 
     4) # paused; resume failed
     # FAIL; don't delete; return ERROR -- manual intervension may be needed
-    exit_with_link 4 "Resume failed, manual intervension may be needed"
+    exit_with_link 4 "ERROR: Resume failed, manual intervension may be needed"
     ;;
 
     5) # unknown status or phase
