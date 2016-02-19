@@ -19,6 +19,8 @@
 ################### Common to both step_1 and step_2
 ###################
 
+export LANG=en_US  # Hard-coded because there is a defect w/ en_US.UTF-8
+
 # Colors
 export green='\e[0;32m'
 export red='\e[0;31m'
