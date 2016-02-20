@@ -177,8 +177,6 @@ if [[ -n "${original_grp}" ]]; then
   if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_args="${create_args} --rampdown ${RAMPDOWN_DURATION}"; fi
   create_args="${create_args} --test 1s";
   
-  echo "Executing update: cf active-deploy-create ${create_args}"
-
   active=$(find_active_update ${original_grp})
   if [[ -n ${active} ]]; then
     echo "Original group ${original_grp} already engaged in an active update; rolling it back"
