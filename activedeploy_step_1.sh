@@ -169,13 +169,13 @@ if [[ -n "${original_grp}" ]]; then
   
   echo "Executing update: cf active-deploy-create ${create_args}"
 
-  active=find_active_update ${original_grp}
+  active=$(find_active_update ${original_grp})
   if [[ -n ${active} ]]; then
     echo "Original group ${original_grp} already engaged in an active update; rolling it back"
     rollback ${active}
   fi
   # Check if it worked
-  active=find_active_update ${original_grp}
+  active=$(find_active_update ${original_grp})
   if [[ -n ${active} ]]; then
     echo -e "${red}ERROR: Original group ${original_grp} still engaged in an active update; rollback did not work. Exiting.${no_color}"
     with_retry active_deploy show ${active}
@@ -183,7 +183,7 @@ if [[ -n "${original_grp}" ]]; then
   fi
 
   # Now attempt to call the update
-  update=$(create) && create_rc=$? || create_rc=$?
+  update=$(create ${create_args}) && create_rc=$? || create_rc=$?
   #### grep for update id; this is done because a mistake in CLI v0.1.99 caused other things to be output
   ###update=$(active_deploy create ${create_args} | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$")
   #### error checking on update
