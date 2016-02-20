@@ -199,7 +199,7 @@ if [[ -n "${original_grp}" ]]; then
   # Unable to create update
   if (( ${create_rc} )); then
     echo -e "${red}ERROR: failed to create update; ${update}${no_color}"
-    with_retry active_deploy list | grep "[[:space:]]${NAME}[[:space:]]"
+    with_retry active_deploy list | grep "[[:space:]]${original_grp}[[:space:]]"
     exit ${create_rc}
   fi
 

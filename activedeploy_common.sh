@@ -149,10 +149,10 @@ function find_active_update() {
 # Call cf active-deploy-create. Return the id of the new update if successful. Log errors to stderr.
 # Usage: create create_args
 function create() {
-  local __args=$*
+  #local __args=$*
 
-  >&2 echo "Calling cf active-deploy-create ${__args}"
-  active_deploy create ${__args} | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  #>&2 echo "Calling cf active-deploy-create ${__args}"
+  active_deploy create $* | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
   create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
   if (( ${status} )); then
     if (( $create_rc )); then
