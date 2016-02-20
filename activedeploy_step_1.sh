@@ -183,7 +183,7 @@ if [[ -n "${original_grp}" ]]; then
   fi
 
   # Now attempt to call the update
-  update=$(create ${create_args}) && create_rc=$? || create_rc=$?
+  update=$(create "${create_args}") && create_rc=$? || create_rc=$?
   #### grep for update id; this is done because a mistake in CLI v0.1.99 caused other things to be output
   ###update=$(active_deploy create ${create_args} | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$")
   #### error checking on update
