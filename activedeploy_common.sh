@@ -149,7 +149,7 @@ function find_active_update() {
 # Call cf active-deploy-create. Return the id of the new update if successful. Log errors to stderr.
 # Usage: create create_args
 function create() {
-  local __args= "$*"
+  local __args="$*"
 
   >&2 echo "Called create with args ${__args}"
   active_deploy create "${__args}" | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
