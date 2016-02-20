@@ -36,6 +36,16 @@ echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION"
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
 echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
 
+ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
+update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
+update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
+#echo "Identified update_url as: ${update_url}"
+
+echo -e "${green}**********************************************************************"
+echo "Direct deployment URL:"
+echo "${${update_gui_url}/deployments/?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}}"
+echo -e "**********************************************************************${no_color}"
+
 function exit_with_link() {
   local __status="${1}"
   local __message="${2}"
@@ -167,14 +177,30 @@ if [[ -n "${original_grp}" ]]; then
   if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_args="${create_args} --rampdown ${RAMPDOWN_DURATION}"; fi
   create_args="${create_args} --test 1s";
   
-  echo "Executing update: cf active-deploy-create ${create_args}"
-  update=$(active_deploy create ${create_args})
-  # error checking on update
-  update_rc=$?
-  if (( ${update_rc} )); then
-    echo "ERROR: failed to create update; ${update}"
-    with_retry active_deploy list --timeout 60s
-    exit ${update_rc}
+  active=$(find_active_update ${original_grp})
+  if [[ -n ${active} ]]; then
+    echo "Original group ${original_grp} already engaged in an active update; rolling it back"
+    rollback ${active}
+    # Check if it worked
+    active=$(find_active_update ${original_grp})
+    if [[ -n ${active} ]]; then
+      echo -e "${red}ERROR: Original group ${original_grp} still engaged in an active update; rollback did not work. Exiting.${no_color}"
+      with_retry active_deploy show ${active}
+      exit 1
+    fi
+  fi
+
+  # Now attempt to call the update
+  update=$(create ${create_args}) && create_rc=$? || create_rc=$?
+  #### grep for update id; this is done because a mistake in CLI v0.1.99 caused other things to be output
+  ###update=$(active_deploy create ${create_args} | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$")
+  #### error checking on update
+  ###create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[1]}"
+  # Unable to create update
+  if (( ${create_rc} )); then
+    echo -e "${red}ERROR: failed to create update; ${update}${no_color}"
+    with_retry active_deploy list | grep "[[:space:]]${original_grp}[[:space:]]"
+    exit ${create_rc}
   fi
 
   echo "Initiated update: ${update}"
