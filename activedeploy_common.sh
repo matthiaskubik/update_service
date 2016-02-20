@@ -150,8 +150,8 @@ function find_active_update() {
 # Usage: create create_args
 function create() {
 
-  >&2 echo "Calling create with args $*"
-  active_deploy create "$*" | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  >&2 echo "Called create with args $*"
+  active_deploy create $* | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
   create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
   if (( ${status} )); then
     if (( $create_rc )); then

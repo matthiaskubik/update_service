@@ -36,6 +36,16 @@ echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION"
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
 echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
 
+ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
+update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
+update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
+#echo "Identified update_url as: ${update_url}"
+
+echo -e "${green}**********************************************************************"
+echo "Direct deployment URL:"
+echo "${${update_gui_url}/deployments/?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}}"
+echo -e "**********************************************************************${no_color}"
+
 function exit_with_link() {
   local __status="${1}"
   local __message="${2}"
@@ -183,7 +193,7 @@ if [[ -n "${original_grp}" ]]; then
   fi
 
   # Now attempt to call the update
-  update=$(create "${create_args}") && create_rc=$? || create_rc=$?
+  update=$(create ${create_args}) && create_rc=$? || create_rc=$?
   #### grep for update id; this is done because a mistake in CLI v0.1.99 caused other things to be output
   ###update=$(active_deploy create ${create_args} | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$")
   #### error checking on update
