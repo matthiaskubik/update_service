@@ -118,6 +118,34 @@ function with_retry() {
 }
 
 
+# Identify any update in progress for group name
+# Usage find_inprogress name
+function find_inprogress_update() {
+  local __name="${1}"
+
+  local match=$(with_retry active_deploy list | \
+                 grep "[[:space:]]${__name}[[:space:]]" | \
+                 grep -e "[[:space:]]in_progress[[:space:]]" | \
+                 awk '{print $2}')
+  echo ${match}
+}
+
+
+# Identify any active update for group name; that is, one that is either in_progress, paused or rolling back
+# Usage find_active_update name
+function find_active_update() {
+  local __name="${1}"
+
+  match=$(with_retry active_deploy list | \
+                 grep "[[:space:]]${__name}[[:space:]]" | \
+                 grep -e "[[:space:]]in_progress[[:space:]]" \
+                      -e "[[:space:]]rolling back[[:space:]]" \
+                      -e "[[:space:]]paused[[:space:]]" | \
+                 awk '{print $2}')
+  echo ${match}
+}
+
+
 function advance() {
   __update_id="${1}"
   >&2 echo "Advancing update ${__update_id}"
@@ -448,3 +476,18 @@ except Exception, e:
 CODE
 }
 
+
+function foo() {
+  command="cf active-deploy-create hello_0207_182 hello_0207_201 --rampup 1m --test 1s --rampdown 30s --manual --quiet"
+  $command | tee /tmp/create$$ | grep "^X[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
+  if (( ${status} )); then
+    if (( $create_rc )); then
+      >&2 echo "ERROR: create failed: $(cat /tmp/create$$)"
+    elif (( $grep_rc )); then
+      >&2 echo "ERROR: No id returned (or pattern wrong)"
+    fi
+  fi
+  rm /tmp/create$$
+  return $status
+}

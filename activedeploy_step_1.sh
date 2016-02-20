@@ -168,13 +168,31 @@ if [[ -n "${original_grp}" ]]; then
   create_args="${create_args} --test 1s";
   
   echo "Executing update: cf active-deploy-create ${create_args}"
-  update=$(active_deploy create ${create_args})
-  # error checking on update
-  update_rc=$?
-  if (( ${update_rc} )); then
-    echo "ERROR: failed to create update; ${update}"
-    with_retry active_deploy list --timeout 60s
-    exit ${update_rc}
+
+  active=find_active_update ${original_grp}
+  if [[ -n ${active} ]]; then
+    echo "Original group ${original_grp} already engaged in an active update; rolling it back"
+    rollback ${active}
+  fi
+  # Check if it worked
+  active=find_active_update ${original_grp}
+  if [[ -n ${active} ]]; then
+    echo -e "${red}ERROR: Original group ${original_grp} still engaged in an active update; rollback did not work. Exiting.${no_color}"
+    with_retry active_deploy show ${active}
+    exit 1
+  fi
+
+  # Now attempt to call the update
+  update=$(create) && create_rc=$? || create_rc=$?
+  #### grep for update id; this is done because a mistake in CLI v0.1.99 caused other things to be output
+  ###update=$(active_deploy create ${create_args} | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$")
+  #### error checking on update
+  ###create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[1]}"
+  # Unable to create update
+  if (( ${create_rc} )); then
+    echo -e "${red}ERROR: failed to create update; ${update}${no_color}"
+    with_retry active_deploy list | grep "[[:space:]]${NAME}[[:space:]]"
+    exit ${create_rc}
   fi
 
   echo "Initiated update: ${update}"
