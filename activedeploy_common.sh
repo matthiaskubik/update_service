@@ -151,13 +151,13 @@ function find_active_update() {
 function create() {
 
   >&2 echo "Calling create with args $*"
-  active_deploy create "$*" | tee /tmp/create$$ | grep "^X[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  active_deploy create "$*" | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
   create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
   if (( ${status} )); then
     if (( $create_rc )); then
-      >&2 echo "ERROR: create failed: $(cat /tmp/create$$)"
+      >&2 echo -e "${red}ERROR: create failed: $(cat /tmp/create$$)${no_color}"
     elif (( $grep_rc )); then
-      >&2 echo "ERROR: No id returned (or pattern wrong)"
+      >&2 echo -e "${red}ERROR: No id returned (or pattern wrong)${no_color}"
     fi
   fi
   rm /tmp/create$$
