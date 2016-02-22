@@ -177,10 +177,7 @@ if [[ -n "${original_grp}" ]]; then
 
   # Now attempt to call the update
   update=$(create ${create_args}) && create_rc=$? || create_rc=$?
-  #### grep for update id; this is done because a mistake in CLI v0.1.99 caused other things to be output
-  ###update=$(active_deploy create ${create_args} | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$")
-  #### error checking on update
-  ###create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[1]}"
+
   # Unable to create update
   if (( ${create_rc} )); then
     echo -e "${red}ERROR: failed to create update; ${update}${no_color}"
@@ -192,20 +189,10 @@ if [[ -n "${original_grp}" ]]; then
   with_retry active_deploy show $update --timeout 60s
 
   # Identify URL for visualization of update. To do this:
-  #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
-  #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
-  #   (c) Construct URL
-  #echo "Identified ad_server_url as: ${ad_server_url}"
-  #update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
-  #echo "Identified update_gui_url as: ${update_gui_url}"
-  update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-  #echo "Identified update_url as: ${update_url}"
-  show_link "Deployment URL" ${update_url} ${green}
-
-  #echo -e "${green}**********************************************************************"
-  #echo "Direct deployment URL:"
-  #echo "${update_url}"
-  #echo -e "**********************************************************************${no_color}"
+  # The active deploy api server and GUI server were computed in check
+  show_link "Deployment URL" \
+            "${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" \
+            ${green}
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
