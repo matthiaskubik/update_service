@@ -27,17 +27,6 @@ export red='\e[0;31m'
 export label_color='\e[0;33m'
 export no_color='\e[0m' # No Color
 
-ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
-update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
-update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-#echo "Identified update_url as: ${update_url}"
-
-echo -e "${green}**********************************************************************"
-echo "Direct deployment URL:"
-echo "${${update_gui_url}/deployments/?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}}"
-echo -e "**********************************************************************${no_color}"
-
-
 echo "EXT_DIR=$EXT_DIR"
 if [[ -f $EXT_DIR/common/cf ]]; then
   PATH=$EXT_DIR/common:$PATH
@@ -157,3 +146,21 @@ fi # if [[ -n ${AD_STEP_1} ]]; then
 which cf
 cf --version
 active_deploy service-info
+
+function show_link() {
+  local __label="${1}"
+  local __link="${2}"
+  local __color="${no_color}"
+  if (( $# > 2 )); then __color="${3}"; fi
+
+  echo -e "${__color}**********************************************************************"
+  echo "${__label}"
+  echo "${__link}"
+  echo -e "**********************************************************************${no_color}"
+}
+
+ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
+update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
+
+show_link "Deployments for space ${CF_SPACE_ID}" "${update_gui_url}/deployments/?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" ${green}
+
