@@ -40,17 +40,11 @@ function exit_with_link() {
   local __status="${1}"
   local __message="${2}"
 
-  local color=${green}
-  if (( ${__status} )); then
-    color="${red}"
-  fi
+  local __color=${green}
+  if (( ${__status} )); then __color="${red}"; fi
 
-  echo -e "${color}${__message}${no_color}"
-
-  echo -e "${color}**********************************************************************"
-  echo "Direct deployment URL:"
-  echo "${update_url}"
-  echo -e "**********************************************************************${no_color}"
+  echo -e "${__color}${__message}${no_color}"
+  show_link "Deployment URL" ${update_url} ${__color}
 
   exit ${__status}
 }
@@ -201,17 +195,17 @@ if [[ -n "${original_grp}" ]]; then
   #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
   #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
   #   (c) Construct URL
-  ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
   #echo "Identified ad_server_url as: ${ad_server_url}"
-  update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
+  #update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
   #echo "Identified update_gui_url as: ${update_gui_url}"
-  update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
+  #update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
   #echo "Identified update_url as: ${update_url}"
+  show_link "Deployment URL" ${update_url} ${green}
 
-  echo -e "${green}**********************************************************************"
-  echo "Direct deployment URL:"
-  echo "${update_url}"
-  echo -e "**********************************************************************${no_color}"
+  #echo -e "${green}**********************************************************************"
+  #echo "Direct deployment URL:"
+  #echo "${update_url}"
+  #echo -e "**********************************************************************${no_color}"
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
