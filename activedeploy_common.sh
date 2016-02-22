@@ -78,10 +78,8 @@ function get_property() {
 # Allows for redirecting the calls to a non-default active deploy endpoint
 function active_deploy() {
   local __command="${1}"
-  >&2 echo $*
   shift
 
-  >&2 echo $*
   if [[ -n "${AD_ENDPOINT}" ]]; then
     CF_ACTIVE_DEPLOY_ENDPOINT="${AD_ENDPOINT}" cf active-deploy-${__command} $*
   else
@@ -152,25 +150,18 @@ function find_active_update() {
 # Call cf active-deploy-create. Return the id of the new update if successful. Log errors to stderr.
 # Usage: create create_args
 function create() {
-  #local __args=$*
-
   unset IFS
-
-  >&2 echo $*
   >&2 echo "Calling cf active-deploy-create $*"
-  >&2 echo $*
-  # active_deploy create "$*" | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
-  active_deploy create $*
-  status=$?
-  #create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
-  #if (( ${status} )); then
-  #  if (( $create_rc )); then
-  #    >&2 echo -e "${red}ERROR: create failed: $(cat /tmp/create$$)${no_color}"
-  #  elif (( $grep_rc )); then
-  #    >&2 echo -e "${red}ERROR: No id returned (or pattern wrong)${no_color}"
-  #  fi
-  #fi
-  #rm /tmp/create$$
+  active_deploy create $* | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
+  if (( ${status} )); then
+    if (( $create_rc )); then
+      >&2 echo -e "${red}ERROR: create failed: $(cat /tmp/create$$)${no_color}"
+    elif (( $grep_rc )); then
+      >&2 echo -e "${red}ERROR: No id returned (or pattern wrong)${no_color}"
+    fi
+  fi
+  rm /tmp/create$$
   return $status
 }
 
@@ -240,9 +231,7 @@ function to_seconds() {
     __time="${__time}0s"
   fi
 
-  #####local oldIFD=$IFS
   IFS=' ' read -r -a times <<< $(echo $__time | sed 's/h/ /' | sed 's/m/ /' | sed 's/s//')
-  ####IFS=$oldIFS
   # >&2 echo "${__orig_time} ${__time} ${times[@]}"
 
   seconds=$(printf %0.f $(expr ${times[0]}*3600+${times[1]}*60+${times[2]} | bc))
@@ -276,7 +265,6 @@ function wait_phase_completion() {
   
   local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
   while (( $(date +%s) < ${end_time} )); do
-    ####local oldIFS=$IFS
     IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
 
     update_phase=$(get_property 'phase' ${properties[@]})
@@ -284,15 +272,12 @@ function wait_phase_completion() {
 
     case "${update_status}" in
       completed) # whole update is completed
-    ####IFS=$oldIFS
       return 0
       ;;
       rolled\ back)
-    ####IFS=$oldIFS
       return 2
       ;;
       failed)
-    ####IFS=$oldIFS
       return 3
       ;;
       paused)
@@ -306,7 +291,6 @@ function wait_phase_completion() {
       *)
       >&2 echo "ERROR: Unknown status: ${update_status}"
       >&2 echo "${properties[@]}"
-    ####IFS=$oldIFS
       return 5
       ;;
     esac
@@ -315,19 +299,16 @@ function wait_phase_completion() {
     case "${update_phase}" in
       initial)
       # should only happen if status is rolled back -- which happens when we finish rolling back
-    ####IFS=$oldIFS
       return 2
       ;;
       completed)
       # should only happen if status is completed -- so should never get here
-    ####IFS=$oldIFS
       return 1
       ;;
       rampup|test|rampdown)
       ;;
       *)
       >&2 echo "ERROR: Unknown phase: ${update_phase}"
-    ####IFS=$oldIFS
       return 5
     esac
 
@@ -338,7 +319,6 @@ function wait_phase_completion() {
       if [[ "${phase_progress}" =~ completed* ]]; then
         # The phase is completed
         >&2 echo "Phase ${update_phase} is complete"
-    ####IFS=$oldIFS
         return 0
       else
         >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
@@ -356,7 +336,6 @@ function wait_phase_completion() {
     sleep 3
   done
   
-    ####IFS=$oldIFS
   return 9 # took too long
 }
 
