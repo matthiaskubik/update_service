@@ -61,7 +61,9 @@ function scaleGroup() {
 function getRoutes() {
   local __name="${1}"
 
+  local oldIFS=$IFS
   IFS=',' read -a routes <<< $(cf app ${__name} | grep "^urls: " | sed 's/urls: //' | sed 's/ //g')
+  IFS=$oldIFS
   echo "${routes[@]}"
 }
 

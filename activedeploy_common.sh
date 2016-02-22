@@ -237,7 +237,9 @@ function to_seconds() {
     __time="${__time}0s"
   fi
 
+  local oldIFD=$IFS
   IFS=' ' read -r -a times <<< $(echo $__time | sed 's/h/ /' | sed 's/m/ /' | sed 's/s//')
+  IFS=$oldIFS
   # >&2 echo "${__orig_time} ${__time} ${times[@]}"
 
   seconds=$(printf %0.f $(expr ${times[0]}*3600+${times[1]}*60+${times[2]} | bc))
@@ -271,7 +273,9 @@ function wait_phase_completion() {
   
   local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
   while (( $(date +%s) < ${end_time} )); do
+    local oldIFS=$IFS
     IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
+    IFS=$oldIFS
 
     update_phase=$(get_property 'phase' ${properties[@]})
     update_status=$(get_property 'status' ${properties[@]})
