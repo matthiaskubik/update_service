@@ -62,8 +62,8 @@ with_retry active_deploy show ${update_id}
 
 oldIFS=$IFS
 IFS=$'\n' properties=($(with_retry active_deploy show ${update_id} | grep ':'))
-IFS=$oldIFS
 update_status=$(get_property 'status' ${properties[@]})
+IFS=$oldIFS
 
 # TODO handle other statuses better: could be rolled back, rolling back, paused, failed, ...
 # Insufficient to leave it and let the wait_phase_completion deal with it; the call to advance/rollback could fail

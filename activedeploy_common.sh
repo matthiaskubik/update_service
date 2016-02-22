@@ -63,6 +63,8 @@ function trim () {
 function get_property() {
   __key=$1; shift
   __properties=("$@")
+
+  >&2 echo "get_property(): ${#__properties[@]} properties - ${__properties[@]}"
   for e in "${__properties[@]}"; do
     if [[ $e =~ ${__key}:[[:space:]].* ]]; then
       trim $(echo $e | cut -d: -f2)
@@ -275,19 +277,21 @@ function wait_phase_completion() {
   while (( $(date +%s) < ${end_time} )); do
     local oldIFS=$IFS
     IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
-    IFS=$oldIFS
 
     update_phase=$(get_property 'phase' ${properties[@]})
     update_status=$(get_property 'status' ${properties[@]})
 
     case "${update_status}" in
       completed) # whole update is completed
+    IFS=$oldIFS
       return 0
       ;;
       rolled\ back)
+    IFS=$oldIFS
       return 2
       ;;
       failed)
+    IFS=$oldIFS
       return 3
       ;;
       paused)
@@ -301,6 +305,7 @@ function wait_phase_completion() {
       *)
       >&2 echo "ERROR: Unknown status: ${update_status}"
       >&2 echo "${properties[@]}"
+    IFS=$oldIFS
       return 5
       ;;
     esac
@@ -309,16 +314,19 @@ function wait_phase_completion() {
     case "${update_phase}" in
       initial)
       # should only happen if status is rolled back -- which happens when we finish rolling back
+    IFS=$oldIFS
       return 2
       ;;
       completed)
       # should only happen if status is completed -- so should never get here
+    IFS=$oldIFS
       return 1
       ;;
       rampup|test|rampdown)
       ;;
       *)
       >&2 echo "ERROR: Unknown phase: ${update_phase}"
+    IFS=$oldIFS
       return 5
     esac
 
@@ -329,6 +337,7 @@ function wait_phase_completion() {
       if [[ "${phase_progress}" =~ completed* ]]; then
         # The phase is completed
         >&2 echo "Phase ${update_phase} is complete"
+    IFS=$oldIFS
         return 0
       else
         >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
@@ -346,6 +355,7 @@ function wait_phase_completion() {
     sleep 3
   done
   
+    IFS=$oldIFS
   return 9 # took too long
 }
 
