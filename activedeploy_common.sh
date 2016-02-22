@@ -77,8 +77,10 @@ function get_property() {
 # Allows for redirecting the calls to a non-default active deploy endpoint
 function active_deploy() {
   local __command="${1}"
+  >&2 echo $*
   shift
 
+  >&2 echo $*
   if [[ -n "${AD_ENDPOINT}" ]]; then
     CF_ACTIVE_DEPLOY_ENDPOINT="${AD_ENDPOINT}" cf active-deploy-${__command} $*
   else
