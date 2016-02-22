@@ -143,9 +143,11 @@ if [[ -n $AD_STEP_1 ]]; then
 fi # if [[ -n ${AD_STEP_1} ]]; then
 
 # debug info
-which cf
-cf --version
-active_deploy service-info
+if [[ -n ${DEBUG} ]]; then
+  which cf
+  cf --version
+  active_deploy service-info
+fi
 
 function show_link() {
   local __label="${1}"
@@ -159,8 +161,13 @@ function show_link() {
   echo -e "**********************************************************************${no_color}"
 }
 
+
+# Identify URL for visualization of updates associated with this space. To do this:
+#   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
+#   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
+#   (c) Construct URL
 ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
 update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
 
-show_link "Deployments for space ${CF_SPACE_ID}" "${update_gui_url}/deployments/?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" ${green}
+show_link "Deployments for space ${CF_SPACE_ID}" "${update_gui_url}/deployments?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" ${green}
 
