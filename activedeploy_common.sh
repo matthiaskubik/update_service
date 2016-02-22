@@ -155,6 +155,8 @@ function find_active_update() {
 function create() {
   #local __args=$*
 
+  unset IFS
+
   >&2 echo $*
   >&2 echo "Calling cf active-deploy-create $*"
   >&2 echo $*
@@ -239,9 +241,9 @@ function to_seconds() {
     __time="${__time}0s"
   fi
 
-  local oldIFD=$IFS
+  #####local oldIFD=$IFS
   IFS=' ' read -r -a times <<< $(echo $__time | sed 's/h/ /' | sed 's/m/ /' | sed 's/s//')
-  IFS=$oldIFS
+  ####IFS=$oldIFS
   # >&2 echo "${__orig_time} ${__time} ${times[@]}"
 
   seconds=$(printf %0.f $(expr ${times[0]}*3600+${times[1]}*60+${times[2]} | bc))
@@ -275,7 +277,7 @@ function wait_phase_completion() {
   
   local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
   while (( $(date +%s) < ${end_time} )); do
-    local oldIFS=$IFS
+    ####local oldIFS=$IFS
     IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
 
     update_phase=$(get_property 'phase' ${properties[@]})
@@ -283,15 +285,15 @@ function wait_phase_completion() {
 
     case "${update_status}" in
       completed) # whole update is completed
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 0
       ;;
       rolled\ back)
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 2
       ;;
       failed)
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 3
       ;;
       paused)
@@ -305,7 +307,7 @@ function wait_phase_completion() {
       *)
       >&2 echo "ERROR: Unknown status: ${update_status}"
       >&2 echo "${properties[@]}"
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 5
       ;;
     esac
@@ -314,19 +316,19 @@ function wait_phase_completion() {
     case "${update_phase}" in
       initial)
       # should only happen if status is rolled back -- which happens when we finish rolling back
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 2
       ;;
       completed)
       # should only happen if status is completed -- so should never get here
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 1
       ;;
       rampup|test|rampdown)
       ;;
       *)
       >&2 echo "ERROR: Unknown phase: ${update_phase}"
-    IFS=$oldIFS
+    ####IFS=$oldIFS
       return 5
     esac
 
@@ -337,7 +339,7 @@ function wait_phase_completion() {
       if [[ "${phase_progress}" =~ completed* ]]; then
         # The phase is completed
         >&2 echo "Phase ${update_phase} is complete"
-    IFS=$oldIFS
+    ####IFS=$oldIFS
         return 0
       else
         >&2 echo "Phase ${update_phase} progress is: ${phase_progress}"
@@ -355,7 +357,7 @@ function wait_phase_completion() {
     sleep 3
   done
   
-    IFS=$oldIFS
+    ####IFS=$oldIFS
   return 9 # took too long
 }
 
