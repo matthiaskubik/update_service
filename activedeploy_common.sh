@@ -64,7 +64,6 @@ function get_property() {
   __key=$1; shift
   __properties=("$@")
 
-  >&2 echo "get_property(): ${#__properties[@]} properties - ${__properties[@]}"
   for e in "${__properties[@]}"; do
     if [[ $e =~ ${__key}:[[:space:]].* ]]; then
       trim $(echo $e | cut -d: -f2)
