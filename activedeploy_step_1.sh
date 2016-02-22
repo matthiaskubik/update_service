@@ -126,7 +126,8 @@ if (( 1 < ${#ROUTED[@]} )); then
 fi
 
 if (( 0 < ${#ROUTED[@]} )); then
-  original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
+  original_grp=${ROUTED[0]}
+  #original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
   original_grp_id=${original_grp#_*}
 fi
 

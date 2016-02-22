@@ -63,6 +63,7 @@ function trim () {
 function get_property() {
   __key=$1; shift
   __properties=("$@")
+
   for e in "${__properties[@]}"; do
     if [[ $e =~ ${__key}:[[:space:]].* ]]; then
       trim $(echo $e | cut -d: -f2)
@@ -149,23 +150,18 @@ function find_active_update() {
 # Call cf active-deploy-create. Return the id of the new update if successful. Log errors to stderr.
 # Usage: create create_args
 function create() {
-  #local __args=$*
-
-  >&2 echo $*
+  unset IFS
   >&2 echo "Calling cf active-deploy-create $*"
-  >&2 echo $*
-  # active_deploy create "$*" | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
-  active_deploy create $*
-  status=$?
-  #create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
-  #if (( ${status} )); then
-  #  if (( $create_rc )); then
-  #    >&2 echo -e "${red}ERROR: create failed: $(cat /tmp/create$$)${no_color}"
-  #  elif (( $grep_rc )); then
-  #    >&2 echo -e "${red}ERROR: No id returned (or pattern wrong)${no_color}"
-  #  fi
-  #fi
-  #rm /tmp/create$$
+  active_deploy create $* | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
+  if (( ${status} )); then
+    if (( $create_rc )); then
+      >&2 echo -e "${red}ERROR: create failed: $(cat /tmp/create$$)${no_color}"
+    elif (( $grep_rc )); then
+      >&2 echo -e "${red}ERROR: No id returned (or pattern wrong)${no_color}"
+    fi
+  fi
+  rm /tmp/create$$
   return $status
 }
 
