@@ -40,17 +40,11 @@ function exit_with_link() {
   local __status="${1}"
   local __message="${2}"
 
-  local color=${green}
-  if (( ${__status} )); then
-    color="${red}"
-  fi
+  local __color=${green}
+  if (( ${__status} )); then __color="${red}"; fi
 
-  echo -e "${color}${__message}${no_color}"
-
-  echo -e "${color}**********************************************************************"
-  echo "Direct deployment URL:"
-  echo "${update_url}"
-  echo -e "**********************************************************************${no_color}"
+  echo -e "${__color}${__message}${no_color}"
+  show_link "Deployment URL" ${update_url} ${__color}
 
   exit ${__status}
 }
@@ -116,7 +110,8 @@ if (( 1 < ${#ROUTED[@]} )); then
 fi
 
 if (( 0 < ${#ROUTED[@]} )); then
-  original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
+  original_grp=${ROUTED[0]}
+  #original_grp=${ROUTED[$(expr ${#ROUTED[@]} - 1)]}
   original_grp_id=${original_grp#_*}
 fi
 
@@ -167,34 +162,37 @@ if [[ -n "${original_grp}" ]]; then
   if [[ -n "${RAMPDOWN_DURATION}" ]]; then create_args="${create_args} --rampdown ${RAMPDOWN_DURATION}"; fi
   create_args="${create_args} --test 1s";
   
-  echo "Executing update: cf active-deploy-create ${create_args}"
-  update=$(active_deploy create ${create_args})
-  # error checking on update
-  update_rc=$?
-  if (( ${update_rc} )); then
-    echo "ERROR: failed to create update; ${update}"
-    with_retry active_deploy list --timeout 60s
-    exit ${update_rc}
+  active=$(find_active_update ${original_grp})
+  if [[ -n ${active} ]]; then
+    echo "Original group ${original_grp} already engaged in an active update; rolling it back"
+    rollback ${active}
+    # Check if it worked
+    active=$(find_active_update ${original_grp})
+    if [[ -n ${active} ]]; then
+      echo -e "${red}ERROR: Original group ${original_grp} still engaged in an active update; rollback did not work. Exiting.${no_color}"
+      with_retry active_deploy show ${active}
+      exit 1
+    fi
+  fi
+
+  # Now attempt to call the update
+  update=$(create ${create_args}) && create_rc=$? || create_rc=$?
+
+  # Unable to create update
+  if (( ${create_rc} )); then
+    echo -e "${red}ERROR: failed to create update; ${update}${no_color}"
+    with_retry active_deploy list | grep "[[:space:]]${original_grp}[[:space:]]"
+    exit ${create_rc}
   fi
 
   echo "Initiated update: ${update}"
   with_retry active_deploy show $update --timeout 60s
 
   # Identify URL for visualization of update. To do this:
-  #   (a) look up the active deploy api server (cf. service endpoint field of cf active-deplpy-service-info)
-  #   (b) look up the GUI server associated with the active deploy api server (cf. update_gui_url field of response to info REST call
-  #   (c) Construct URL
-  ad_server_url=$(active_deploy service-info | grep "service endpoint: " | sed 's/service endpoint: //')
-  #echo "Identified ad_server_url as: ${ad_server_url}"
-  update_gui_url=$(curl -s ${ad_server_url}/v1/info/ | grep update_gui_url | awk '{print $2}' | sed 's/"//g' | sed 's/,//')
-  #echo "Identified update_gui_url as: ${update_gui_url}"
-  update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
-  #echo "Identified update_url as: ${update_url}"
-
-  echo -e "${green}**********************************************************************"
-  echo "Direct deployment URL:"
-  echo "${update_url}"
-  echo -e "**********************************************************************${no_color}"
+  # The active deploy api server and GUI server were computed in check
+  show_link "Deployment URL" \
+            "${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" \
+            ${green}
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update

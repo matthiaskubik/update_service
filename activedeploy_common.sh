@@ -63,6 +63,7 @@ function trim () {
 function get_property() {
   __key=$1; shift
   __properties=("$@")
+
   for e in "${__properties[@]}"; do
     if [[ $e =~ ${__key}:[[:space:]].* ]]; then
       trim $(echo $e | cut -d: -f2)
@@ -115,6 +116,53 @@ function with_retry() {
   cat /tmp/$$
   rm -f /tmp/$$
   return ${rc}
+}
+
+
+# Identify any update in progress for group name
+# Usage find_inprogress name
+function find_inprogress_update() {
+  local __name="${1}"
+
+  local match=$(with_retry active_deploy list | \
+                 grep "[[:space:]]${__name}[[:space:]]" | \
+                 grep -e "[[:space:]]in_progress[[:space:]]" | \
+                 awk '{print $2}')
+  echo ${match}
+}
+
+
+# Identify any active update for group name; that is, one that is either in_progress, paused or rolling back
+# Usage find_active_update name
+function find_active_update() {
+  local __name="${1}"
+
+  match=$(with_retry active_deploy list | \
+                 grep "[[:space:]]${__name}[[:space:]]" | \
+                 grep -e "[[:space:]]in_progress[[:space:]]" \
+                      -e "[[:space:]]rolling back[[:space:]]" \
+                      -e "[[:space:]]paused[[:space:]]" | \
+                 awk '{print $2}')
+  echo ${match}
+}
+
+
+# Call cf active-deploy-create. Return the id of the new update if successful. Log errors to stderr.
+# Usage: create create_args
+function create() {
+  unset IFS
+  >&2 echo "Calling cf active-deploy-create $*"
+  active_deploy create $* | tee /tmp/create$$ | grep "^[0-9a-f]\{8\}-\([0-9a-f]\{4\}-\)\{3\}[0-9a-f]\{12\}$"
+  create_rc="${PIPESTATUS[0]}" grep_rc="${PIPESTATUS[2]}" status=$?
+  if (( ${status} )); then
+    if (( $create_rc )); then
+      >&2 echo -e "${red}ERROR: create failed: $(cat /tmp/create$$)${no_color}"
+    elif (( $grep_rc )); then
+      >&2 echo -e "${red}ERROR: No id returned (or pattern wrong)${no_color}"
+    fi
+  fi
+  rm /tmp/create$$
+  return $status
 }
 
 

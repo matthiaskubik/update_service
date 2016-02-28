@@ -46,21 +46,27 @@ if [[ -n ${MUSTFAIL_ACTIVEDEPLOY} ]]; then
   exit 128
 fi
 
+# Identify URL for visualization of update. To do this:
+# The active deploy api server and GUI server were computed in check
+show_link "Deployment URL" \
+          "${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" \
+          ${green}
+
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}"
-in_prog=$(active_deploy list | grep "${NAME}" | grep "in_progress")
+in_prog=$(with_retry active_deploy list | grep "${NAME}" | grep "in_progress")
 read -a array <<< "$in_prog"
 update_id=${array[0]}
 if [[ -z "${update_id}" ]]; then
   echo "INFO: Initial version (no update containing ${NAME}); exiting"
-  active_deploy list
+  with_retry active_deploy list
   exit 0
 fi
 
 echo "INFO: Not initial version (part of update ${update_id})"
-active_deploy show ${update_id}
+with_retry active_deploy show ${update_id}
 
-IFS=$'\n' properties=($(active_deploy show ${update_id} | grep ':'))
+IFS=$'\n' properties=($(with_retry active_deploy show ${update_id} | grep ':'))
 update_status=$(get_property 'status' ${properties[@]})
 
 # TODO handle other statuses better: could be rolled back, rolling back, paused, failed, ...

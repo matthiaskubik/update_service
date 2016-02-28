@@ -16,7 +16,7 @@
 #********************************************************************************
 
 
-MIN_MAX_WAIT=180
+MIN_MAX_WAIT=300
 
 
 # Return list of names of existing versions
