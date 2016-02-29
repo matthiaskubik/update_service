@@ -23,10 +23,10 @@ fi
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source ${SCRIPTDIR}/check_and_set_env.sh
 
-log_and_echo $INFO "TARGET_PLATFORM = $TARGET_PLATFORM"
-log_and_echo $INFO "NAME = $NAME"
-log_and_echo $INFO "AD_ENDPOINT = $AD_ENDPOINT"
-log_and_echo $INFO "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
+echo "TARGET_PLATFORM = $TARGET_PLATFORM"
+echo "NAME = $NAME"
+echo $INFO "AD_ENDPOINT = $AD_ENDPOINT"
+echo $INFO "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
 
 # cd to target so can read ccs.py when needed (for group deletion)
 cd ${SCRIPTDIR}
