@@ -190,9 +190,8 @@ if [[ -n "${original_grp}" ]]; then
 
   # Identify URL for visualization of update. To do this:
   # The active deploy api server and GUI server were computed in check
-  show_link "Deployment URL" \
-            "${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" \
-            ${green}
+  update_url="${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}"
+  show_link "Deployment URL" "${update_url}" ${green}
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
