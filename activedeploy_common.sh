@@ -382,8 +382,7 @@ function clean() {
   PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
   VERSION=$(echo $NAME | rev | cut -d_ -f1 | rev)
 
-  read -a candidates <<< $(groupList)
-  #candidates=($(groupList))
+  candidates=($(groupList))
   debugme echo "clean(): Found ${#candidates[@]} versions: ${candidates[@]}"
 
   VERSIONS=()
