@@ -25,8 +25,8 @@ source ${SCRIPTDIR}/check_and_set_env.sh
 
 echo "TARGET_PLATFORM = $TARGET_PLATFORM"
 echo "NAME = $NAME"
-echo $INFO "AD_ENDPOINT = $AD_ENDPOINT"
-echo $INFO "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
+echo "AD_ENDPOINT = $AD_ENDPOINT"
+echo "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
 
 # cd to target so can read ccs.py when needed (for group deletion)
 cd ${SCRIPTDIR}
