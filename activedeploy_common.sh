@@ -274,7 +274,10 @@ function wait_phase_completion() {
     env_check=$?
     if [[ ${env_check} -eq '0' ]]; then
       #send update to broker
-      curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"$update_status\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+      echo ${__update_id}
+      echo $AD_API_URL
+      echo $SERVICE_ID
+      # curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"$update_status\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
     fi
 
     case "${update_status}" in
