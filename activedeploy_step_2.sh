@@ -16,7 +16,7 @@
 #********************************************************************************
 
 #set $DEBUG to 1 for set -x output
-if [ $DEBUG -eq '1' ]; then
+if [ $DEBUG -eq 1 ]; then
   set -x # trace steps
 fi
 
@@ -46,12 +46,6 @@ if [[ -n ${MUSTFAIL_ACTIVEDEPLOY} ]]; then
   exit 128
 fi
 
-# Identify URL for visualization of update. To do this:
-# The active deploy api server and GUI server were computed in check
-show_link "Deployment URL" \
-          "${update_gui_url}/deployments/${update}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" \
-          ${green}
-
 # Identify the active deploy in progress. We do so by looking for a deploy 
 # involving the add / container named "${NAME}"
 in_prog=$(with_retry active_deploy list | grep "${NAME}" | grep "in_progress")
@@ -62,6 +56,12 @@ if [[ -z "${update_id}" ]]; then
   with_retry active_deploy list
   exit 0
 fi
+
+# Identify URL for visualization of update. To do this:
+# The active deploy api server and GUI server were computed in check
+show_link "Deployment URL" \
+          "${update_gui_url}/deployments/${update_id}?ace_config={%22spaceGuid%22:%22${CF_SPACE_ID}%22}" \
+          ${green}
 
 echo "INFO: Not initial version (part of update ${update_id})"
 with_retry active_deploy show ${update_id}
