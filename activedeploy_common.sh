@@ -266,7 +266,7 @@ function wait_phase_completion() {
   >&2 echo "Update ${__update_id} called wait at ${start_time}"
   
   local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
-  while (( $(date +%s) < ${end_time}); do
+  while (( $(date +%s) < ${end_time} )); do
     IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
 
     update_phase=$(get_property 'phase' ${properties[@]})
