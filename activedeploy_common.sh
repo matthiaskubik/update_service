@@ -266,7 +266,7 @@ function wait_phase_completion() {
   >&2 echo "Update ${__update_id} called wait at ${start_time}"
   
   local end_time=$(expr ${start_time} + ${__max_wait}) # initial end_time; will be udpated below	
-  while (( $(date +%s) < (${end_time} + 10)); do
+  while (( $(date +%s) < ${end_time} + 10); do
     IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
 
     update_phase=$(get_property 'phase' ${properties[@]})
@@ -274,13 +274,16 @@ function wait_phase_completion() {
 
     #check environment for V2, skip if V1
     if [[ ${env_check} -eq '0' ]]; then
-      echo $update_status
       #send update to broker
       curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"$update_status\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
     fi
 
     case "${update_status}" in
       completed) # whole update is completed
+      if [[ ${env_check} -eq '0' ]]; then
+        #send update to broker
+        curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"completed\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+      fi
       return 0
       ;;
       rolled\ back)
