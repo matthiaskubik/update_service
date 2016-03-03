@@ -253,6 +253,9 @@ function wait_phase_completion() {
   local __max_wait=10
   local __expected_duration=0
 
+  curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
+  env_check=$?
+
   if [[ -z ${__update_id} ]]; then
     >&2 echo "ERROR: Expected update identifier to be passed into wait_phase_completion" 
     return 1
@@ -270,9 +273,8 @@ function wait_phase_completion() {
     update_status=$(get_property 'status' ${properties[@]})
 
     #check environment for V2, skip if V1
-    curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
-    env_check=$?
     if [[ ${env_check} -eq '0' ]]; then
+      echo $update_status
       #send update to broker
       curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"$update_status\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
     fi
