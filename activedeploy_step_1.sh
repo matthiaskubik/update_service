@@ -212,12 +212,14 @@ if [[ -n "${original_grp}" ]]; then
       #proceed normally
       export SERVICE_ID="$(python processJSON.py sid)"
       export AD_API_URL="$(python processJSON.py ad-url)"
+      export PIPELINE_NAME="$(python processJSON.py $PIPELINE_ID)"
       
-      echo "SERVICE_ID=${SERVICE_ID}"
-      echo "AD_API_URL=${AD_API_URL}"
+      # echo "SERVICE_ID=${SERVICE_ID}"
+      # echo "AD_API_URL=${AD_API_URL}"
+      # echo "PIPELINE_NAME=${PIPELINE_NAME}"
 
       curl -s -X PUT --data "{\"organization_guid\": \"$CF_ORGANIZATION_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/v1/service_instances/$SERVICE_ID" > curlRes.json
-      curl -s -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\", \"ui_url\": \"$update_url\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+      curl -s -X PUT --data "{\"update_id\": \"$PY_UPDATE_ID\", \"stage_name\": \"$IDS_STAGE_NAME\", \"space_id\": \"$CF_SPACE_ID\", \"ui_url\": \"$update_url\", \"pipeline_id\": \"$PIPELINE_ID\", \"pipeline_name\": \"$PIPELINE_NAME\", \"stage_id\": \"$PIPELINE_STAGE_ID\", \"job_id\": \"$IDS_JOB_ID\", \"ad_status\": \"\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
       if (( $? )); then
         echo "WARNING: Failed to record the update"
         # Inability to record an update is not a reason to fail

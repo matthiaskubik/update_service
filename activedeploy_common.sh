@@ -238,7 +238,6 @@ function to_seconds() {
   echo ${seconds}
 }
 
-
 # Wait for current phase to complete
 # Usage: wait_phase_completion update_id max_wait
 # Response codes:
@@ -253,6 +252,9 @@ function wait_phase_completion() {
   # Small default value to get us into the loop where we will compute it
   local __max_wait=10
   local __expected_duration=0
+
+  curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
+  env_check=$?
 
   if [[ -z ${__update_id} ]]; then
     >&2 echo "ERROR: Expected update identifier to be passed into wait_phase_completion" 
@@ -269,6 +271,12 @@ function wait_phase_completion() {
 
     update_phase=$(get_property 'phase' ${properties[@]})
     update_status=$(get_property 'status' ${properties[@]})
+
+    #check environment for V2, skip if V1
+    if [[ ${env_check} -eq '0' ]]; then
+      #send update to broker
+      curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"$update_status\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+    fi
 
     case "${update_status}" in
       completed) # whole update is completed
@@ -318,6 +326,10 @@ function wait_phase_completion() {
       phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
       if [[ "${phase_progress}" =~ completed* ]]; then
         # The phase is completed
+        if [[ ${env_check} -eq '0' ]]; then
+          #send update to broker
+          curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"completed\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+        fi
         >&2 echo "Phase ${update_phase} is complete"
         return 0
       else
