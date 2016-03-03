@@ -280,10 +280,6 @@ function wait_phase_completion() {
 
     case "${update_status}" in
       completed) # whole update is completed
-      if [[ ${env_check} -eq '0' ]]; then
-        #send update to broker
-        curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"completed\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
-      fi
       return 0
       ;;
       rolled\ back)
@@ -330,6 +326,10 @@ function wait_phase_completion() {
       phase_progress=$(get_property "${update_phase} duration" ${properties[@]})
       if [[ "${phase_progress}" =~ completed* ]]; then
         # The phase is completed
+        if [[ ${env_check} -eq '0' ]]; then
+          #send update to broker
+          curl -s -X PATCH --data "{\"update_id\": \"${__update_id}\", \"ad_status\": \"completed\"}" -H "Authorization: ${TOOLCHAIN_TOKEN}" -H "Content-Type: application/json" "$AD_API_URL/register_deploy/$SERVICE_ID"
+        fi
         >&2 echo "Phase ${update_phase} is complete"
         return 0
       else
