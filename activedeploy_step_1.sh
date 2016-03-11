@@ -94,6 +94,8 @@ function rollback_and_cleanup() {
 cd ${SCRIPTDIR}
 
 originals=($(groupList))
+#originals=($(cf apps | cut -d' ' -f1))
+
 successor="${NAME}"
 
 # export version of this build

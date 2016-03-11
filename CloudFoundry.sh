@@ -21,6 +21,7 @@ MIN_MAX_WAIT=90
 # Usage: groupList
 function groupList() {
   PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  echo "MYPATTERN = $PATTERN"
   cf apps | grep "^${PATTERN}_[0-9]*[[:space:]]" | cut -d' ' -f1
   ## TODO error checking on result of cf apps call
 }
