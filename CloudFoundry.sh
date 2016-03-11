@@ -20,7 +20,7 @@ MIN_MAX_WAIT=90
 # Return list of names of existing versions
 # Usage: groupList
 function groupList() {
-  PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)
+  PATTERN=$(echo $NAME | rev | cut -d_ -f2- | rev)  
   cf apps | grep "^${PATTERN}_[0-9]*[[:space:]]" | cut -d' ' -f1
   ## TODO error checking on result of cf apps call
 }
