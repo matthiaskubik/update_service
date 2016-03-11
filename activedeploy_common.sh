@@ -171,9 +171,11 @@ function advance() {
   >&2 echo "Advancing update ${__update_id}"
   with_retry active_deploy show ${__update_id}
 
-  active_deploy advance ${__update_id}
-  wait_phase_completion ${__update_id} && rc=$? || rc=$?
-  
+  active_deploy advance ${__update_id} && rc=$? || rc=$?
+  if [[ $rc -eq 0 ]]; then
+  	wait_phase_completion ${__update_id} && rc=$? || rc=$?	
+  fi
+    
   >&2 echo "Return code for advance is ${rc}"
   return ${rc}
 }
@@ -185,20 +187,22 @@ function rollback() {
   >&2 echo "Rolling back update ${__update_id}"
   with_retry active_deploy show ${__update_id}
 
-  active_deploy rollback ${__update_id}
-  wait_phase_completion ${__update_id} && rc=$? || rc=$?
+  active_deploy rollback ${__update_id} && rc=$? || rc=$?
+  if [[ $rc -eq 0 ]]; then
+  	wait_phase_completion ${__update_id} && rc=$? || rc=$?  
   
-  # stop rolled back app
-  properties=($(with_retry active_deploy show ${__update_id} | grep "successor group: "))
-  str1=${properties[@]}
-  str2=${str1#*": "}
-  app_name=${str2%" app"*}
-  # TODO replace the above 4 lines with these using our get_properties() utility method
-  #IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
-  #app_name=$(get_property 'successor group' ${properties[@]} | sed -e '#s/ app.*$##')
-  out=$(stopGroup ${app_name})
-  >&2 echo "${app_name} stopped after rollback"
+	# stop rolled back app
+	properties=($(with_retry active_deploy show ${__update_id} | grep "successor group: "))
+	str1=${properties[@]}
+	str2=${str1#*": "}
+	app_name=${str2%" app"*}
+	# TODO replace the above 4 lines with these using our get_properties() utility method
+	#IFS=$'\n' properties=($(with_retry active_deploy show ${__update_id} | grep ':'))
+	#app_name=$(get_property 'successor group' ${properties[@]} | sed -e '#s/ app.*$##')
+	out=$(stopGroup ${app_name})
+	>&2 echo "${app_name} stopped after rollback"
   
+  fi  
   >&2 echo "Return code for rollback is ${rc}"
   return ${rc}
 }

@@ -94,7 +94,6 @@ function rollback_and_cleanup() {
 cd ${SCRIPTDIR}
 
 originals=($(groupList))
-#echo "Originals = ${originals[@]}"
 #originals=($(cf apps | cut -d' ' -f1))
 
 successor="${NAME}"
