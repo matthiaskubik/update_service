@@ -27,6 +27,7 @@ echo "TARGET_PLATFORM = $TARGET_PLATFORM"
 echo "NAME = $NAME"
 echo "AD_ENDPOINT = $AD_ENDPOINT"
 echo "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
+echo "TOOLCHAIN_AVAILABLE = $TOOLCHAIN_AVAILABLE"
 
 # cd to target so can read ccs.py when needed (for group deletion)
 cd ${SCRIPTDIR}

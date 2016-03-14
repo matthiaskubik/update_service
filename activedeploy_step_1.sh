@@ -35,6 +35,7 @@ echo "RAMPUP_DURATION = $RAMPUP_DURATION"
 echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION" 
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
 echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
+echo "TOOLCHAIN_AVAILABLE = $TOOLCHAIN_AVAILABLE"
 
 function exit_with_link() {
   local __status="${1}"
@@ -197,9 +198,7 @@ if [[ -n "${original_grp}" ]]; then
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
-  curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
-  env_check=$?
-  if [[ ${env_check} -eq '0' ]]; then
+  if (( ${TOOLCHAIN_AVAILABLE )); then
     echo "PIPELINE_TOOLCHAIN_ID=${PIPELINE_TOOLCHAIN_ID}"
     export TC_API_RES="$(curl -s -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
    #echo "***** TC_API_RES:"
