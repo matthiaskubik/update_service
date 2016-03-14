@@ -198,7 +198,7 @@ if [[ -n "${original_grp}" ]]; then
 
   # Identify toolchain if available and send update details to it
   export PY_UPDATE_ID=$update
-  if (( ${TOOLCHAIN_AVAILABLE )); then
+  if (( ${TOOLCHAIN_AVAILABLE} )); then
     echo "PIPELINE_TOOLCHAIN_ID=${PIPELINE_TOOLCHAIN_ID}"
     export TC_API_RES="$(curl -s -k -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything)"
    #echo "***** TC_API_RES:"
