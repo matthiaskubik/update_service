@@ -79,7 +79,7 @@ if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=2; fi
 # Check if the pipeline is in the context of a toolchain by querying the toolchain broker. 
 # If so, set TOOLCHAIN_AVAILABLE to 1; otherwise to 0
 curl -s --head -H "Authorization: ${TOOLCHAIN_TOKEN}" https://otc-api.stage1.ng.bluemix.net/api/v1/toolchains/${PIPELINE_TOOLCHAIN_ID}\?include\=everything | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
-if (( $? )); then TOOLCHAIN_AVAILABLE = 0; else TOOLCHAIN_AVAILABLE = 1; fi
+if (( $? )); then TOOLCHAIN_AVAILABLE=0; else TOOLCHAIN_AVAILABLE=1; fi
 export TOOLCHAIN_AVAILABLE
 
 
