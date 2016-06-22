@@ -26,7 +26,8 @@ python - <<CODE
 import ccs
 import os
 import sys
-s = ccs.ContainerCloudService()
+s = ccs.ContainerCloudService(cfapi= ccs.CloudFoundaryService(os.getenv('CF_TARGET_URL')),
+                              base_url='https://{}/v3/containers'.format(os.getenv('CCS_API_HOST')))
 groups = s.list_groups(timeout=30)
 #sys.write.stderr('{}\n'.format(groups))
 names = [g.get('Name', '') for g in groups]
@@ -42,7 +43,8 @@ __name="${1}" python - <<CODE
 import ccs
 import os
 import sys
-s = ccs.ContainerCloudService()
+s = ccs.ContainerCloudService(cfapi= ccs.CloudFoundaryService(os.getenv('CF_TARGET_URL')),
+                              base_url='https://{}/v3/containers'.format(os.getenv('CCS_API_HOST')))
 name = os.getenv('__name')
 deleted, group, reason = s.forced_delete_group(name, timeout=90)
 if not deleted:
@@ -59,7 +61,8 @@ __name="${1}" __domain="${2}" __host="${3}" python - <<CODE
 import ccs
 import os
 import sys
-s = ccs.ContainerCloudService()
+s = ccs.ContainerCloudService(cfapi= ccs.CloudFoundaryService(os.getenv('CF_TARGET_URL')),
+                              base_url='https://{}/v3/containers'.format(os.getenv('CCS_API_HOST')))
 name = os.getenv('__name')
 domain = os.getenv('__domain')
 hostname = os.getenv('__host')
@@ -78,7 +81,8 @@ __name="${1}" __size="${2}" python - <<CODE
 import ccs
 import os
 import sys
-s = ccs.ContainerCloudService()
+s = ccs.ContainerCloudService(cfapi= ccs.CloudFoundaryService(os.getenv('CF_TARGET_URL')),
+                              base_url='https://{}/v3/containers'.format(os.getenv('CCS_API_HOST')))
 name = os.getenv('__name')
 size = os.getenv('__size')
 scaled, group, reason = s.resize(name, size, timeout=90)
@@ -96,7 +100,8 @@ __name="${1}" python - <<CODE
 import ccs
 import os
 import sys
-s = ccs.ContainerCloudService()
+s = ccs.ContainerCloudService(cfapi= ccs.CloudFoundaryService(os.getenv('CF_TARGET_URL')),
+                              base_url='https://{}/v3/containers'.format(os.getenv('CCS_API_HOST')))
 name = os.getenv('__name')
 group, reason = s.inspect_group(name, timeout=30)
 if group is None:
