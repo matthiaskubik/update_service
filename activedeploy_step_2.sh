@@ -28,6 +28,7 @@ echo "NAME = $NAME"
 echo "AD_ENDPOINT = $AD_ENDPOINT"
 echo "CONCURRENT_VERSIONS = $CONCURRENT_VERSIONS"
 echo "TOOLCHAIN_AVAILABLE = $TOOLCHAIN_AVAILABLE"
+echo "CCS_API_HOST = $CCS_API_HOST"
 
 # cd to target so can read ccs.py when needed (for group deletion)
 cd ${SCRIPTDIR}

@@ -73,6 +73,16 @@ if [[ -n "${AD_ENDPOINT}" ]]; then
   fi
 fi
 
+# Check and set CCS_API_HOST
+if [[ -z ${CCS_API_HOST} ]]; then 
+  # If AD_ENDPOINT is runnig on stage1, switch to the appropriate CCS
+  if [[ ${AD_ENDPOINT} == *".stage1."* ]]; then
+    export CCS_API_HOST="https://containers-api.stage1.ng.bluemix.net"
+  else
+    export CCS_API_HOST="https://containers-api.ng.bluemix.net"
+  fi
+fi
+
 # Set default (1) for CONCURRENT_VERSIONS
 if [[ -z ${CONCURRENT_VERSIONS} ]]; then export CONCURRENT_VERSIONS=2; fi
 

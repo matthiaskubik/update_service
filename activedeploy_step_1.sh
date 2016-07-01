@@ -36,6 +36,7 @@ echo "RAMPDOWN_DURATION = $RAMPDOWN_DURATION"
 echo "ROUTE_HOSTNAME = $ROUTE_HOSTNAME" 
 echo "ROUTE_DOMAIN = $ROUTE_DOMAIN"
 echo "TOOLCHAIN_AVAILABLE = $TOOLCHAIN_AVAILABLE"
+echo "CCS_API_HOST = $CCS_API_HOST"
 
 function exit_with_link() {
   local __status="${1}"
